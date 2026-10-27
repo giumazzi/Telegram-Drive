@@ -5,6 +5,7 @@ import type { Page } from '@playwright/test';
  */
 export async function desktopFixture(page: Page, options: {
   pickedUploadPaths?: string[];
+  zippedFolderPath?: string;
   accountFailures?: number;
   holdFiles?: boolean;
   holdStartupHealth?: boolean;
@@ -156,6 +157,7 @@ export async function desktopFixture(page: Page, options: {
           if (command === 'cmd_get_sync_status') return { enabled: state.sync.settings.enabled, running: false, activePairs: 0, pendingOps: 0, conflicts: 0, lastError: null, pairs: [] };
           if (command === 'plugin:dialog|save') return '/synthetic/Downloads/photo.jpg';
           if (command === 'plugin:dialog|open') return options.pickedUploadPaths ?? '/synthetic/Library';
+          if (command === 'cmd_zip_folder') return options.zippedFolderPath ?? null;
           if (command === 'cmd_preview_sync_pair') return {
             request: args.request, generatedAt: 1_790_000_000, reviewToken: 'fixture-review-token', accountOwner: args.ownerId, localFiles: 2, remoteFiles: 2,
             counts: { uploads: 0, downloads: 0, deleteLocal: 0, deleteRemote: 0, conflicts: args.request.preferences.adoptMatchingFiles ? 0 : 2, skipped: args.request.preferences.adoptMatchingFiles ? 2 : 0 },

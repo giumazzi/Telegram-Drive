@@ -674,7 +674,8 @@ export function useFileUpload(
         requireCurrent();
         if (!folderPath) return;
 
-        const folderName = folderPath.split('/').pop() || folderPath.split('\\').pop() || 'folder';
+        // Pickers may return Windows separators or a trailing separator.
+        const folderName = folderPath.split(/[\\/]/).filter(Boolean).pop() || 'folder';
 
         if (settings.zipFolders) {
             toast.info(`Zipping "${folderName}"...`);

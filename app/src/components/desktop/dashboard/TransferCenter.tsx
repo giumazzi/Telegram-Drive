@@ -49,6 +49,14 @@ function StatusLabel({ status }: { status: QueueItem['status'] | DownloadItem['s
   return <span className={`text-[10px] font-medium capitalize ${tone}`}>{status}</span>;
 }
 
+// Every non-terminal state is cancellable in the engine, including network
+// backoff and credential waits that may otherwise never end.
+const cancellableStatuses = new Set<QueueItem['status'] | DownloadItem['status']>([
+  'pending', 'paused', 'waiting_for_network', 'waiting_for_unlock', 'cooldown',
+  'uploading', 'downloading', 'encrypting', 'decrypting', 'verifying',
+]);
+const isCancellable = (status: QueueItem['status'] | DownloadItem['status']) => cancellableStatuses.has(status);
+
 export function TransferCenter({
   openRequest = 0,
   uploads,
@@ -79,6 +87,8 @@ export function TransferCenter({
   const pausedUploads = uploads.filter((item) => item.status === 'paused').length;
   const pausedDownloads = downloads.filter((item) => item.status === 'paused').length;
   const pausedCount = pausedUploads + pausedDownloads;
+  const cancellableUploads = uploads.filter((item) => isCancellable(item.status)).length;
+  const cancellableDownloads = downloads.filter((item) => isCancellable(item.status)).length;
   const aggregateSpeed = [...uploads, ...downloads]
     .filter((item) => ['uploading', 'downloading', 'encrypting', 'decrypting', 'verifying'].includes(item.status))
     .reduce((sum, item) => sum + (item.speedBytesPerSec || 0), 0);
@@ -113,7 +123,7 @@ export function TransferCenter({
                 <div className="flex gap-3 text-[11px]">
                   {activeUploads > 0 && <button type="button" onClick={onPauseUploads} className="flex items-center gap-1 text-app-text-secondary"><Pause className="h-3 w-3" aria-hidden="true" />Pause all</button>}
                   {pausedUploads > 0 && <button type="button" onClick={onResumeUploads} className="flex items-center gap-1 text-app-accent"><Play className="h-3 w-3" aria-hidden="true" />Resume all</button>}
-                  {activeUploads > 0 && <button type="button" onClick={onCancelUploads} className="text-app-danger">Cancel all</button>}
+                  {cancellableUploads > 0 && <button type="button" onClick={onCancelUploads} className="text-app-danger">Cancel all</button>}
                   <button type="button" onClick={onClearUploads} className="text-app-accent">Clear finished</button>
                 </div>
               </div>
@@ -125,7 +135,7 @@ export function TransferCenter({
                       <p className="truncate text-xs text-app-text" title={item.url || item.path}>{(item.url || item.path).split(/[\\/]/).pop()}</p>
                       <StatusLabel status={item.status} />
                     </div>
-                    {(item.status === 'pending' || item.status === 'paused' || item.status === 'uploading' || item.status === 'downloading' || item.status === 'encrypting' || item.status === 'verifying') && <button type="button" onClick={() => onCancelUpload(item.id)} className="quiet-control p-1.5 text-app-text-secondary hover:text-app-danger" aria-label={`Cancel upload ${item.url || item.path}`} title={i18n.t("common.cancel")}><X className="h-3.5 w-3.5" aria-hidden="true" /></button>}
+                    {isCancellable(item.status) && <button type="button" onClick={() => onCancelUpload(item.id)} className="quiet-control p-1.5 text-app-text-secondary hover:text-app-danger" aria-label={`Cancel upload ${item.url || item.path}`} title={i18n.t("common.cancel")}><X className="h-3.5 w-3.5" aria-hidden="true" /></button>}
                     {(item.status === 'error' || item.status === 'cancelled' || item.status === 'waiting_for_unlock') && <button type="button" onClick={() => onRetryUpload(item.id)} className="quiet-control p-1.5 text-app-text-secondary hover:text-app-accent" aria-label={i18n.t('common.action_name', { action: item.status === 'waiting_for_unlock' ? i18n.t('protection_labels.provide_credentials') : i18n.t('common.retry'), name: item.url || item.path })} title={item.status === 'waiting_for_unlock' ? i18n.t('protection_labels.provide_credentials') : i18n.t("common.retry")}><RotateCcw className="h-3.5 w-3.5" aria-hidden="true" /></button>}
                   </div>
                   {(item.status === 'uploading' || item.status === 'downloading') && <TransferProgress value={item.progress} />}
@@ -142,7 +152,7 @@ export function TransferCenter({
                 <div className="flex gap-3 text-[11px]">
                   {activeDownloads > 0 && <button type="button" onClick={onPauseDownloads} className="flex items-center gap-1 text-app-text-secondary"><Pause className="h-3 w-3" aria-hidden="true" />Pause all</button>}
                   {pausedDownloads > 0 && <button type="button" onClick={onResumeDownloads} className="flex items-center gap-1 text-app-accent"><Play className="h-3 w-3" aria-hidden="true" />Resume all</button>}
-                  {activeDownloads > 0 && <button type="button" onClick={onCancelDownloads} className="text-app-danger">Cancel all</button>}
+                  {cancellableDownloads > 0 && <button type="button" onClick={onCancelDownloads} className="text-app-danger">Cancel all</button>}
                   <button type="button" onClick={onClearDownloads} className="text-app-accent">Clear finished</button>
                 </div>
               </div>
@@ -151,7 +161,7 @@ export function TransferCenter({
                   <div className="flex items-center gap-3">
                     <Download className="h-4 w-4 shrink-0 text-app-info" />
                     <div className="min-w-0 flex-1"><p className="truncate text-xs text-app-text" title={item.filename}>{item.filename}</p>{item.downloadOutcome === 'skipped' ? <span className="text-[10px] text-app-text-secondary">{i18n.t('downloadCollision.skipped')}</span> : <StatusLabel status={item.status} />}</div>
-                    {(item.status === 'pending' || item.status === 'paused' || item.status === 'cooldown' || item.status === 'downloading' || item.status === 'decrypting' || item.status === 'verifying') && <button type="button" onClick={() => onCancelDownload(item.id)} className="quiet-control p-1.5 text-app-text-secondary hover:text-app-danger" aria-label={`Cancel download ${item.filename}`} title={i18n.t("common.cancel")}><X className="h-3.5 w-3.5" aria-hidden="true" /></button>}
+                    {isCancellable(item.status) && <button type="button" onClick={() => onCancelDownload(item.id)} className="quiet-control p-1.5 text-app-text-secondary hover:text-app-danger" aria-label={`Cancel download ${item.filename}`} title={i18n.t("common.cancel")}><X className="h-3.5 w-3.5" aria-hidden="true" /></button>}
                     {(item.status === 'error' || item.status === 'cancelled' || item.status === 'waiting_for_unlock') && <button type="button" onClick={() => onRetryDownload(item.id)} className="quiet-control p-1.5 text-app-text-secondary hover:text-app-accent" aria-label={i18n.t('common.action_name', { action: item.status === 'waiting_for_unlock' ? i18n.t('protection_labels.provide_credentials') : i18n.t('common.retry'), name: item.filename })} title={item.status === 'waiting_for_unlock' ? i18n.t('protection_labels.provide_credentials') : i18n.t("common.retry")}><RotateCcw className="h-3.5 w-3.5" aria-hidden="true" /></button>}
                   </div>
                   {(item.status === 'downloading' || item.status === 'decrypting' || item.status === 'verifying') && <TransferProgress value={item.progress} tone="info" />}
