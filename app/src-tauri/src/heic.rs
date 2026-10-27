@@ -41,7 +41,7 @@ impl Tools {
                 ffmpeg.push(path);
             }
         }
-        ffmpeg.push(PathBuf::from("ffmpeg"));
+        ffmpeg.extend(crate::process_util::ffmpeg_candidates());
         Self {
             sips,
             ffmpeg,

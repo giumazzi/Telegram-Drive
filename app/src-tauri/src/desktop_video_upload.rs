@@ -527,7 +527,7 @@ fn ffmpeg_thumbnail(
             candidates.push(path);
         }
     }
-    candidates.push(PathBuf::from("ffmpeg"));
+    candidates.extend(crate::process_util::ffmpeg_candidates());
     for candidate in candidates {
         stopped(stop)?;
         if Instant::now() >= deadline {

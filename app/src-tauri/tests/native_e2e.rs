@@ -68,6 +68,12 @@ impl Backend {
         if root.join(".video-upload-helper-path").exists() {
             command.env("PATH", root.join("video-upload-codec"));
         }
+        if root.join(".video-upload-package-manager").exists() {
+            command.env(
+                "TELEGRAM_DRIVE_E2E_TOOL_DIRECTORIES",
+                root.join("package-manager-bin"),
+            );
+        }
         let mut child = command
             .arg(root)
             .stdin(Stdio::piped())
@@ -9526,6 +9532,60 @@ fn video_upload_unavailable_decoder_reports_file_fallback_without_publication_or
     let fallback=app.ok(json!({"command":"video_upload_prepare","owner":"101","source":"unsupported.mp4","mode":"file"}));
     assert_eq!(fallback["result"]["video"], false);
     assert_eq!(fallback["sendAttempts"], 0);
+    assert_video_upload_scratch_empty(&fixture);
+    app.stop();
+}
+
+// macOS opens applications from Finder or the Dock without the Homebrew PATH.
+// The production preview pipeline must still find FFmpeg where a package
+// manager installed it. The directory is substituted for /opt/homebrew/bin so
+// the journey runs on every Unix host; the decoder itself is the real FFmpeg.
+#[cfg(unix)]
+#[test]
+fn video_upload_finds_ffmpeg_in_a_package_manager_directory_missing_from_path() {
+    use std::os::unix::fs::PermissionsExt;
+    let fixture = Fixture::new();
+    video_upload_fixture(&fixture, "homebrew.mp4", false, false);
+    let installed = std::env::split_paths(&std::env::var_os("PATH").unwrap_or_default())
+        .map(|directory| directory.join("ffmpeg"))
+        .find(|candidate| candidate.is_file())
+        .expect("This journey needs an installed FFmpeg, as the other video journeys do");
+    let directory = fixture.path("package-manager-bin");
+    std::fs::create_dir(&directory).unwrap();
+    let marker = fixture.path("package-manager-ffmpeg-used");
+    let script = format!(
+        "#!/bin/sh\nprintf used > '{}'\nexec '{}' \"$@\"\n",
+        marker.display(),
+        installed.display()
+    );
+    let executable = directory.join("ffmpeg");
+    std::fs::write(&executable, script).unwrap();
+    std::fs::set_permissions(&executable, std::fs::Permissions::from_mode(0o700)).unwrap();
+    fixture.write(
+        ".video-upload-empty-path",
+        b"Launched without the package manager PATH",
+    );
+    fixture.write(
+        ".video-upload-package-manager",
+        b"FFmpeg installed outside the application PATH",
+    );
+    let mut app = start_video_upload_backend(&fixture);
+    let result = app.ok(json!({"command":"video_upload_prepare","owner":"101",
+        "source":"homebrew.mp4","mode":"media"}));
+    assert_eq!(
+        result["result"]["receipt"], "controlled-telegram-message-303",
+        "{result}"
+    );
+    assert_eq!(result["thumbnailRequests"], 1);
+    assert_eq!(result["sendAttempts"], 1);
+    assert!(marker.is_file(), "The package-manager FFmpeg was not used");
+    assert!(uploaded_video_wire(&result).thumb.is_some());
+    let thumbnail = fixture.read(
+        result["thumbnail"]
+            .as_str()
+            .expect("No generated thumbnail file"),
+    );
+    image::load_from_memory(&thumbnail).expect("Thumbnail must be an actual decodable JPEG");
     assert_video_upload_scratch_empty(&fixture);
     app.stop();
 }

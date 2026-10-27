@@ -29,3 +29,37 @@ pub fn hide_console_blocking(command: &mut std::process::Command) {
         let _ = command;
     }
 }
+
+/// Directories where package managers install command-line tools. macOS
+/// opens applications from Finder or the Dock without them on the PATH, so an
+/// FFmpeg installed with Homebrew or MacPorts would otherwise look missing.
+#[cfg(target_os = "macos")]
+const PACKAGE_MANAGER_BIN_DIRECTORIES: &[&str] =
+    &["/opt/homebrew/bin", "/usr/local/bin", "/opt/local/bin"];
+#[cfg(not(target_os = "macos"))]
+const PACKAGE_MANAGER_BIN_DIRECTORIES: &[&str] = &[];
+
+fn package_manager_bin_directories() -> Vec<std::path::PathBuf> {
+    // Native journeys substitute a private directory for the macOS locations.
+    #[cfg(feature = "native-e2e")]
+    if let Some(directories) = std::env::var_os("TELEGRAM_DRIVE_E2E_TOOL_DIRECTORIES") {
+        return std::env::split_paths(&directories).collect();
+    }
+    PACKAGE_MANAGER_BIN_DIRECTORIES
+        .iter()
+        .map(std::path::PathBuf::from)
+        .collect()
+}
+
+/// FFmpeg executables to try after a bundled one: the PATH lookup first, then
+/// each installed copy in a package-manager directory the PATH may lack.
+pub fn ffmpeg_candidates() -> Vec<std::path::PathBuf> {
+    let mut candidates = vec![std::path::PathBuf::from("ffmpeg")];
+    candidates.extend(
+        package_manager_bin_directories()
+            .into_iter()
+            .map(|directory| directory.join("ffmpeg"))
+            .filter(|candidate| candidate.is_file()),
+    );
+    candidates
+}

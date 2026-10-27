@@ -922,7 +922,15 @@ fn cmd_get_system_diagnostics(app: tauri::AppHandle) -> Result<String, String> {
                 .arg("ffmpeg")
                 .output()
                 .ok()
-                .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string());
+                .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+                .filter(|path| !path.is_empty())
+                .or_else(|| {
+                    // The application also finds a package-manager copy outside PATH.
+                    process_util::ffmpeg_candidates()
+                        .into_iter()
+                        .find(|candidate| candidate.is_absolute())
+                        .map(|candidate| candidate.display().to_string())
+                });
             lines.push(format!(
                 "FFmpeg: {}",
                 which.unwrap_or_else(|| "not found".into())

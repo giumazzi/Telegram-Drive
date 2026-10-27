@@ -672,20 +672,21 @@ pub async fn detect_ffmpeg(app_handle: &tauri::AppHandle) -> Option<PathBuf> {
 }
 
 pub(crate) async fn detect_path_ffmpeg() -> Option<PathBuf> {
-    match test_ffmpeg(Path::new("ffmpeg")).await {
-        Ok(true) => {
-            log::info!("Transcode: Found FFmpeg on PATH");
-            Some(PathBuf::from("ffmpeg"))
-        }
-        Ok(false) => {
-            log::warn!("Transcode: FFmpeg not found on PATH or version check failed");
-            None
-        }
-        Err(e) => {
-            log::warn!("Transcode: FFmpeg not available on PATH: {}", e);
-            None
+    for candidate in crate::process_util::ffmpeg_candidates() {
+        match test_ffmpeg(&candidate).await {
+            Ok(true) => {
+                log::info!("Transcode: Found FFmpeg at {:?}", candidate);
+                return Some(candidate);
+            }
+            Ok(false) => {
+                log::warn!("Transcode: FFmpeg at {:?} failed version check", candidate);
+            }
+            Err(e) => {
+                log::warn!("Transcode: FFmpeg at {:?} not available: {}", candidate, e);
+            }
         }
     }
+    None
 }
 
 async fn test_ffmpeg(path: &Path) -> Result<bool, String> {
