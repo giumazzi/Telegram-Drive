@@ -1620,6 +1620,9 @@
     "moving": "Spostamento…",
     "skip": "Salta questa cartella",
     "nothing": "Non c'è niente da riordinare qui.",
-    "done": "Fatto. File spostati: {{count}}."
+    "done": "Fatto. File spostati: {{count}}.",
+    "split_title": "Raggruppa file spezzati",
+    "split_intro": "Ogni serie di parti viene spostata in una cartella propria, con il nome del file intero. Confermi ogni cartella prima che venga spostato qualcosa.",
+    "split_nothing": "Qui non ci sono file spezzati."
   }
 }

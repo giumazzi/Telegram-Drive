@@ -1613,6 +1613,9 @@
     "moving": "Inililipat…",
     "skip": "Laktawan ang folder na ito",
     "nothing": "Walang aayusin dito.",
-    "done": "Tapos na. Mga nailipat na file: {{count}}."
+    "done": "Tapos na. Mga nailipat na file: {{count}}.",
+    "split_title": "Pagsamahin ang mga hinating file",
+    "split_intro": "Inililipat ang bawat hanay ng mga bahagi sa sarili nitong folder, na ipinangalan sa buong file. Kinukumpirma mo ang bawat folder bago may mailipat.",
+    "split_nothing": "Walang hinating file dito."
   }
 }

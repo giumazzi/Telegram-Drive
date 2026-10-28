@@ -103,3 +103,54 @@ export function planSortSteps(files: readonly TelegramFile[], origins: ReadonlyM
     return [{ category, files: sorted }];
   });
 }
+
+// Extensions dropped from a split file's name to name its folder, so that
+// `Che pipandula.7z` and `film.mkv` become `Che pipandula` and `film`.
+const FOLDER_NAME_EXTENSIONS = /\.(7z|zip|rar|tar|gz|bz2|xz|iso|mkv|mp4|mov|avi|m4v|webm|wmv|ts|mpg|mpeg)$/i;
+/** Telegram limits channel titles; the folder keeps room for its marker. */
+const MAX_FOLDER_NAME = 100;
+
+export function splitFolderName(base: string): string {
+  let name = base.trim();
+  while (FOLDER_NAME_EXTENSIONS.test(name)) name = name.replace(FOLDER_NAME_EXTENSIONS, '').trim();
+  return (name || base.trim()).slice(0, MAX_FOLDER_NAME).trim();
+}
+
+export interface SplitSetStep {
+  /** The name of the whole file the parts make up. */
+  base: string;
+  files: TelegramFile[];
+}
+
+/**
+ * One step per split file with at least two parts, in name order. A file
+ * named exactly like the whole file (`archive.zip` beside `archive.z01`)
+ * belongs to its set as the final volume.
+ */
+export function planSplitSteps(files: readonly TelegramFile[], origins: ReadonlyMap<number, FileOrigin>): SplitSetStep[] {
+  const sets = new Map<string, { base: string; parts: Array<{ file: TelegramFile; part: number }> }>();
+  const wholeFiles: Array<{ key: string; file: TelegramFile }> = [];
+  for (const file of files) {
+    if (file.type === 'folder') continue;
+    const name = identifyingName(file, origins.get(file.id));
+    const part = splitPart(name);
+    if (!part) {
+      wholeFiles.push({ key: name.trim().toLocaleLowerCase(), file });
+      continue;
+    }
+    const key = part.base.toLocaleLowerCase();
+    const set = sets.get(key) ?? { base: part.base, parts: [] };
+    set.parts.push({ file, part: part.part });
+    sets.set(key, set);
+  }
+  for (const { key, file } of wholeFiles) {
+    sets.get(key)?.parts.push({ file, part: Number.MAX_SAFE_INTEGER });
+  }
+  return [...sets.values()]
+    .filter(set => set.parts.length >= 2)
+    .sort((left, right) => left.base.localeCompare(right.base))
+    .map(set => ({
+      base: set.base,
+      files: [...set.parts].sort((left, right) => left.part - right.part).map(entry => entry.file),
+    }));
+}

@@ -1620,6 +1620,9 @@
     "moving": "Movendo…",
     "skip": "Pular esta pasta",
     "nothing": "Não há nada para organizar aqui.",
-    "done": "Pronto. Arquivos movidos: {{count}}."
+    "done": "Pronto. Arquivos movidos: {{count}}.",
+    "split_title": "Agrupar arquivos divididos",
+    "split_intro": "Cada série de partes vai para uma pasta própria, com o nome do arquivo completo. Você confirma cada pasta antes de qualquer movimentação.",
+    "split_nothing": "Nenhum arquivo dividido foi encontrado aqui."
   }
 }

@@ -1613,6 +1613,9 @@
     "moving": "Đang di chuyển…",
     "skip": "Bỏ qua thư mục này",
     "nothing": "Không có gì để sắp xếp ở đây.",
-    "done": "Xong. Số tệp đã di chuyển: {{count}}."
+    "done": "Xong. Số tệp đã di chuyển: {{count}}.",
+    "split_title": "Nhóm các tệp bị chia nhỏ",
+    "split_intro": "Mỗi bộ phần được chuyển vào thư mục riêng, đặt theo tên tệp đầy đủ. Bạn xác nhận từng thư mục trước khi di chuyển.",
+    "split_nothing": "Không có tệp bị chia nhỏ nào ở đây."
   }
 }

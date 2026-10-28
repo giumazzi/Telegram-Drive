@@ -1613,6 +1613,9 @@
     "moving": "Taşınıyor…",
     "skip": "Bu klasörü atla",
     "nothing": "Burada sıralanacak bir şey yok.",
-    "done": "Tamamlandı. Taşınan dosyalar: {{count}}."
+    "done": "Tamamlandı. Taşınan dosyalar: {{count}}.",
+    "split_title": "Bölünmüş dosyaları grupla",
+    "split_intro": "Her parça seti, tüm dosyanın adını taşıyan kendi klasörüne taşınır. Herhangi bir şey taşınmadan önce her klasörü onaylarsınız.",
+    "split_nothing": "Burada bölünmüş dosya bulunamadı."
   }
 }

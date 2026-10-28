@@ -1613,6 +1613,9 @@
     "moving": "Sedang memindahkan…",
     "skip": "Langkau folder ini",
     "nothing": "Tiada apa-apa untuk diisih di sini.",
-    "done": "Selesai. Fail dipindahkan: {{count}}."
+    "done": "Selesai. Fail dipindahkan: {{count}}.",
+    "split_title": "Kumpulkan fail yang dipecahkan",
+    "split_intro": "Setiap set bahagian dipindahkan ke foldernya sendiri, dinamakan mengikut fail penuh. Anda mengesahkan setiap folder sebelum apa-apa dipindahkan.",
+    "split_nothing": "Tiada fail yang dipecahkan di sini."
   }
 }

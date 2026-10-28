@@ -1613,6 +1613,9 @@
     "moving": "Memindahkan…",
     "skip": "Lewati folder ini",
     "nothing": "Tidak ada yang perlu diurutkan di sini.",
-    "done": "Selesai. File dipindahkan: {{count}}."
+    "done": "Selesai. File dipindahkan: {{count}}.",
+    "split_title": "Kelompokkan file yang dipecah",
+    "split_intro": "Setiap rangkaian bagian dipindahkan ke foldernya sendiri, dinamai sesuai file utuhnya. Anda mengonfirmasi setiap folder sebelum ada yang dipindahkan.",
+    "split_nothing": "Tidak ada file yang dipecah di sini."
   }
 }

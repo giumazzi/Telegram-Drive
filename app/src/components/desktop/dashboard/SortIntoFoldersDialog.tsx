@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useTranslation } from 'react-i18next';
 import { FolderInput, Plus } from 'lucide-react';
+import type { TFunction } from 'i18next';
 import type { TelegramFile, TelegramFolder } from '../../../types';
 import { useModalFocus } from '../../../hooks/useModalFocus';
 import { Button } from '../../ui';
@@ -9,11 +10,25 @@ import { formatBytes } from '../../../utils';
 import {
   identifyingName,
   planSortSteps,
+  planSplitSteps,
+  splitFolderName,
   splitPart,
   type FileOrigin,
-  type SortCategory,
-  type SortStep,
 } from '../../../services/sortIntoFolders';
+
+/** `type`: one folder per kind of file. `split`: one folder per split file. */
+export type SortMode = 'type' | 'split';
+
+interface FolderStep {
+  destination: string;
+  files: TelegramFile[];
+}
+
+function planSteps(mode: SortMode, files: readonly TelegramFile[], origins: ReadonlyMap<number, FileOrigin>, t: TFunction): FolderStep[] {
+  return mode === 'type'
+    ? planSortSteps(files, origins).map(step => ({ destination: t(`workspace.types.${step.category}`), files: step.files }))
+    : planSplitSteps(files, origins).map(step => ({ destination: splitFolderName(step.base), files: step.files }));
+}
 
 /** cmd_get_file_origins accepts at most this many ids per call. */
 const ORIGIN_PAGE = 5_000;
@@ -24,6 +39,7 @@ const ORIGIN_PAGE = 5_000;
 const MOVE_PAGE = 100;
 
 interface SortIntoFoldersDialogProps {
+  mode: SortMode;
   ownerId: string;
   sourceFolderId: number | null;
   files: TelegramFile[];
@@ -46,7 +62,7 @@ function formatDate(value: string | null | undefined, language: string): string 
 const sameName = (folder: TelegramFolder, name: string) =>
   folder.name.trim().toLocaleLowerCase() === name.trim().toLocaleLowerCase();
 
-export function SortIntoFoldersDialog({ ownerId, sourceFolderId, files, folders, onCreateFolder, onMove, onClose }: SortIntoFoldersDialogProps) {
+export function SortIntoFoldersDialog({ mode, ownerId, sourceFolderId, files, folders, onCreateFolder, onMove, onClose }: SortIntoFoldersDialogProps) {
   const { t, i18n } = useTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
   useModalFocus(panelRef, onClose);
@@ -83,21 +99,20 @@ export function SortIntoFoldersDialog({ ownerId, sourceFolderId, files, folders,
     return () => { cancelled = true; };
   }, [ownerId, snapshot, sourceFolderId]);
 
-  const folderName = (category: SortCategory) => t(`workspace.types.${category}`);
-  const steps = useMemo<SortStep[]>(() => {
+  const steps = useMemo<FolderStep[]>(() => {
     if (!origins) return [];
-    // Files already in the folder for their type are sorted.
-    return planSortSteps(snapshot, origins).filter(step => {
-      const existing = folders.find(folder => sameName(folder, t(`workspace.types.${step.category}`)));
+    // Files already in their destination folder are sorted.
+    return planSteps(mode, snapshot, origins, t).filter(step => {
+      const existing = folders.find(folder => sameName(folder, step.destination));
       return !existing || existing.id !== sourceFolderId;
     });
-  }, [origins, snapshot, folders, sourceFolderId, t]);
+  }, [mode, origins, snapshot, folders, sourceFolderId, t]);
 
   const step = steps[stepIndex];
   const finished = origins !== null && stepIndex >= steps.length;
   const stepFiles = step ? step.files.filter(file => !moved.has(file.id)) : [];
   const selected = stepFiles.filter(file => !excluded.has(file.id));
-  const destination = step ? folderName(step.category) : '';
+  const destination = step?.destination ?? '';
   const existingTarget = step ? folders.find(folder => sameName(folder, destination)) : undefined;
 
   const toggle = (id: number) => setExcluded(previous => {
@@ -162,8 +177,8 @@ export function SortIntoFoldersDialog({ ownerId, sourceFolderId, files, folders,
       <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="sort-folders-title" tabIndex={-1} className="quiet-raised flex max-h-[85vh] w-[min(640px,calc(100vw-2rem))] flex-col overflow-hidden">
         <div className="flex items-start justify-between gap-3 border-b border-app-border-subtle p-4">
           <div className="min-w-0">
-            <h3 id="sort-folders-title" className="font-medium text-app-text">{t('sort_folders.title')}</h3>
-            <p className="mt-1 text-metadata text-app-text-secondary">{t('sort_folders.intro')}</p>
+            <h3 id="sort-folders-title" className="font-medium text-app-text">{t(mode === 'type' ? 'sort_folders.title' : 'sort_folders.split_title')}</h3>
+            <p className="mt-1 text-metadata text-app-text-secondary">{t(mode === 'type' ? 'sort_folders.intro' : 'sort_folders.split_intro')}</p>
           </div>
           <button type="button" onClick={onClose} aria-label={t('common.close')} className="text-app-text-secondary hover:text-app-text"><Plus className="h-5 w-5 rotate-45" /></button>
         </div>
@@ -222,7 +237,7 @@ export function SortIntoFoldersDialog({ ownerId, sourceFolderId, files, folders,
 
         {finished && (
           <div className="flex flex-col items-center gap-3 p-6 text-center" role="status">
-            <p className="text-sm text-app-text">{steps.length === 0 ? t('sort_folders.nothing') : t('sort_folders.done', { count: moved.size })}</p>
+            <p className="text-sm text-app-text">{steps.length === 0 ? t(mode === 'type' ? 'sort_folders.nothing' : 'sort_folders.split_nothing') : t('sort_folders.done', { count: moved.size })}</p>
             <Button onClick={onClose}>{t('common.close')}</Button>
           </div>
         )}

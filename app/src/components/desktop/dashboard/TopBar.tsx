@@ -11,6 +11,7 @@ import {
     HardDrive,
     HelpCircle,
     LayoutGrid,
+    Layers,
     List,
     Moon,
     MoreHorizontal,
@@ -58,7 +59,7 @@ interface TopBarProps {
     onShowShortcuts: () => void;
     onShowHelp: () => void;
     /** Present only while a real folder (not a smart view or global search) is shown. */
-    onSortIntoFoldersClick?: () => void;
+    onSortIntoFoldersClick?: (mode: 'type' | 'split') => void;
     searchFilters: FileSearchFilters;
     onSearchFiltersChange: (filters: FileSearchFilters) => void;
 }
@@ -334,10 +335,16 @@ export function TopBar({
                                         {t('files.download_folder')}
                                     </MenuItem>
                                     {onSortIntoFoldersClick && (
-                                        <MenuItem onClick={() => runMoreAction(onSortIntoFoldersClick)}>
-                                            <FolderTree className="h-3.5 w-3.5 text-app-text-secondary" />
-                                            {t('sort_folders.title')}
-                                        </MenuItem>
+                                        <>
+                                            <MenuItem onClick={() => runMoreAction(() => onSortIntoFoldersClick('type'))}>
+                                                <FolderTree className="h-3.5 w-3.5 text-app-text-secondary" />
+                                                {t('sort_folders.title')}
+                                            </MenuItem>
+                                            <MenuItem onClick={() => runMoreAction(() => onSortIntoFoldersClick('split'))}>
+                                                <Layers className="h-3.5 w-3.5 text-app-text-secondary" />
+                                                {t('sort_folders.split_title')}
+                                            </MenuItem>
+                                        </>
                                     )}
                                     <MenuItem onClick={() => runMoreAction(onRemoteUploadClick)}>
                                         <Globe className="h-3.5 w-3.5 text-app-text-secondary" />

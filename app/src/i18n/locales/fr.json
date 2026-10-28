@@ -1620,6 +1620,9 @@
     "moving": "Déplacement…",
     "skip": "Ignorer ce dossier",
     "nothing": "Il n'y a rien à trier ici.",
-    "done": "Terminé. Fichiers déplacés : {{count}}."
+    "done": "Terminé. Fichiers déplacés : {{count}}.",
+    "split_title": "Regrouper les fichiers découpés",
+    "split_intro": "Chaque série de parties est déplacée dans son propre dossier, nommé d'après le fichier complet. Vous confirmez chaque dossier avant tout déplacement.",
+    "split_nothing": "Aucun fichier découpé ici."
   }
 }

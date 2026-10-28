@@ -110,3 +110,61 @@ test('an interrupted move keeps only the unmoved files for a retry and unread de
   expect((await nativeCalls(page, 'cmd_create_folder')).map(call => call.args)).toEqual([{ name: 'Videos' }]);
   expect(new Set(moves.map(move => move.targetFolderId))).toEqual(new Set([501]));
 });
+
+test('grouping split files moves each set of parts into a folder named after the whole file', async ({ page }) => {
+  await desktopFixture(page, {
+    savedFiles: [
+      { id: 303, name: 'Che pipandula.7z.003', file_ext: '003', mime_type: 'application/octet-stream', type: 'file' },
+      { id: 301, name: 'Che pipandula.7z.001', file_ext: '001', mime_type: 'application/octet-stream', type: 'file' },
+      { id: 302, name: 'Che pipandula.7z.002', file_ext: '002', mime_type: 'application/octet-stream', type: 'file' },
+      // Captions hide the parts; the original filenames reveal them.
+      { id: 312, name: 'Il film – seconda parte', file_ext: '002', mime_type: 'application/octet-stream', type: 'file' },
+      { id: 311, name: 'Il film – prima parte', file_ext: '001', mime_type: 'application/octet-stream', type: 'file' },
+      { id: 320, name: 'lonely.7z.001', file_ext: '001', mime_type: 'application/octet-stream', type: 'file' },
+      { id: 330, name: 'notes.pdf', file_ext: 'pdf', mime_type: 'application/pdf', type: 'document' },
+    ],
+    fileOrigins: {
+      311: { originalName: 'film.mkv.001' },
+      312: { originalName: 'film.mkv.002' },
+    },
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Saved Messages', exact: true }).click();
+  await expect(page.getByText('notes.pdf', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Preferences', exact: true }).click();
+  await page.getByRole('menu').getByRole('button', { name: 'Group split files', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Group split files', exact: true });
+
+  // A single part and ordinary files are left alone.
+  await expect(dialog.getByText('Folder 1 of 2', { exact: true })).toBeVisible();
+  await expect(dialog.getByText('Destination: Che pipandula (it will be created)', { exact: true })).toBeVisible();
+  const rows = dialog.getByRole('listitem');
+  await expect(rows).toHaveCount(3);
+  for (const [index, part] of ['001', '002', '003'].entries()) {
+    await expect(rows.nth(index)).toContainText(`Che pipandula.7z.${part}`);
+  }
+  await dialog.getByRole('button', { name: 'Move selected', exact: true }).click();
+
+  await expect(dialog.getByText('Destination: film (it will be created)', { exact: true })).toBeVisible();
+  await expect(dialog.getByRole('listitem').nth(0)).toContainText('Original name: film.mkv.001');
+  await expect(dialog.getByRole('listitem').nth(1)).toContainText('Part 2');
+  await dialog.getByRole('button', { name: 'Move selected', exact: true }).click();
+
+  await expect(dialog.getByText('Done. Files moved: 5.', { exact: true })).toBeVisible();
+  expect((await nativeCalls(page, 'cmd_create_folder')).map(call => call.args)).toEqual([{ name: 'Che pipandula' }, { name: 'film' }]);
+  expect((await nativeCalls(page, 'cmd_move_files')).map(call => [call.args.messageIds, call.args.targetFolderId])).toEqual([
+    [[301, 302, 303], 501],
+    [[311, 312], 502],
+  ]);
+});
+
+test('grouping reports when a folder has no split files', async ({ page }) => {
+  await desktopFixture(page, { savedFiles: [{ id: 330, name: 'notes.pdf', file_ext: 'pdf', mime_type: 'application/pdf', type: 'document' }] });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Saved Messages', exact: true }).click();
+  await expect(page.getByText('notes.pdf', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Preferences', exact: true }).click();
+  await page.getByRole('menu').getByRole('button', { name: 'Group split files', exact: true }).click();
+  await expect(page.getByRole('dialog').getByText('No split files were found here.', { exact: true })).toBeVisible();
+  expect(await nativeCalls(page, 'cmd_move_files')).toHaveLength(0);
+});

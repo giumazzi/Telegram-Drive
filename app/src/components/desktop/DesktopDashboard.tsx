@@ -123,7 +123,7 @@ export function Dashboard({ onLogout }: { onLogout: () => void }) {
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [moveRequest, setMoveRequest] = useState<{ ownerId: string; files: TelegramFile[] } | null>(null);
     const showMoveModal = moveRequest?.ownerId === accountId;
-    const [sortRequest, setSortRequest] = useState<{ ownerId: string; folderId: number | null; files: TelegramFile[] } | null>(null);
+    const [sortRequest, setSortRequest] = useState<{ mode: 'type' | 'split'; ownerId: string; folderId: number | null; files: TelegramFile[] } | null>(null);
     const showSortDialog = sortRequest !== null && sortRequest.ownerId === accountId;
     const [showSettings, setShowSettings] = useState(false);
     const settingsModuleRequested = useRef(false);
@@ -801,8 +801,9 @@ export function Dashboard({ onLogout }: { onLogout: () => void }) {
 
             <AnimatePresence>
                 {showSortDialog && sortRequest && (
-                    <LazyFeatureBoundary key={`sort:${sortRequest.ownerId}:${sortRequest.folderId ?? 'home'}`}>
+                    <LazyFeatureBoundary key={`sort:${sortRequest.mode}:${sortRequest.ownerId}:${sortRequest.folderId ?? 'home'}`}>
                         <LazySortIntoFoldersDialog
+                            mode={sortRequest.mode}
                             ownerId={sortRequest.ownerId}
                             sourceFolderId={sortRequest.folderId}
                             files={sortRequest.files}
@@ -937,7 +938,7 @@ export function Dashboard({ onLogout }: { onLogout: () => void }) {
                     onShowShortcuts={() => setShowShortcuts(true)}
                     onShowHelp={() => setShowHelp(true)}
                     onSortIntoFoldersClick={accountId && activeSmartView === null && searchFilters.scope !== 'all'
-                        ? () => setSortRequest({ ownerId: accountId, folderId: activeFolderId, files: allFiles })
+                        ? mode => setSortRequest({ mode, ownerId: accountId, folderId: activeFolderId, files: allFiles })
                         : undefined}
                 />
                 {(searchTerm.trim().length > 0 || searchFilters.type !== 'all' || searchFilters.size !== 'any' || searchFilters.date !== 'any') && (

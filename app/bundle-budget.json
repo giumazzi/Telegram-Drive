@@ -3,10 +3,10 @@
   "maxJavaScriptChunkBytes": 550000,
   "maxTotalJavaScriptBytes": 3300000,
   "maxTotalCssBytes": 140000,
-  "maxTotalLocaleDataBytes": 1988177,
-  "maxLocaleDataBytes": 141239,
+  "maxTotalLocaleDataBytes": 1994725,
+  "maxLocaleDataBytes": 141722,
   "routeJavaScriptBudgets": {
-    "src/components/desktop/DesktopDashboard.tsx": 303100
+    "src/components/desktop/DesktopDashboard.tsx": 303700
   },
   "featureChunkBudgets": {
     "src/components/desktop/dashboard/SettingsModal.tsx": 159000,
@@ -15,5 +15,5 @@
     "src/components/desktop/dashboard/ArchiveViewerModal.tsx": 25000,
     "node_modules/hls.js/dist/hls.mjs": 540000
   },
-  "policy": "Initial JavaScript, desktop route and Settings ceilings were lowered after measured P2 reductions. Other reviewed ceilings remain unchanged. The PDF viewer feature ceiling rose from 500000 to 510000 for the PDF.js 6 security upgrade (GHSA-hq66-cqwq-w95j); the chunk loads only when a PDF is opened. Locale-only ceilings include the existing reviewed 24-language supporter UI expansion, the shared key dictionary and every canonical translated value. Further increases require a performance review. The 4.1.0 performance review adds exactly 9002 canonical locale bytes (0.461%) and 611 bytes to the largest catalog for four caption/reload labels in all 24 locales. Dictionary plus English grows 368 bytes; dictionary plus the largest selected catalog grows 744 bytes, with unchanged loading requests. JavaScript, CSS, route, feature and literal ceilings are unchanged. The Sort by type review adds exactly 26741 canonical locale bytes (1.363%) and 1838 bytes to the largest catalog for 22 dialog labels in all 24 locales; folder names reuse the existing workspace type labels. The dialog and its planning code load as a separate 8 KB chunk only when opened; the desktop route grows 1280 bytes (from 301772 to 303052) for its menu entry and wiring, so its ceiling rises from 302000 to 303100. Initial JavaScript, CSS, feature and literal ceilings are unchanged."
+  "policy": "Initial JavaScript, desktop route and Settings ceilings were lowered after measured P2 reductions. Other reviewed ceilings remain unchanged. The PDF viewer feature ceiling rose from 500000 to 510000 for the PDF.js 6 security upgrade (GHSA-hq66-cqwq-w95j); the chunk loads only when a PDF is opened. Locale-only ceilings include the existing reviewed 24-language supporter UI expansion, the shared key dictionary and every canonical translated value. Further increases require a performance review. The 4.1.0 performance review adds exactly 9002 canonical locale bytes (0.461%) and 611 bytes to the largest catalog for four caption/reload labels in all 24 locales. Dictionary plus English grows 368 bytes; dictionary plus the largest selected catalog grows 744 bytes, with unchanged loading requests. JavaScript, CSS, route, feature and literal ceilings are unchanged. The Sort by type review adds exactly 26741 canonical locale bytes (1.363%) and 1838 bytes to the largest catalog for 22 dialog labels in all 24 locales; folder names reuse the existing workspace type labels. The dialog and its planning code load as a separate 8 KB chunk only when opened; the desktop route grows 1280 bytes (from 301772 to 303052) for its menu entry and wiring, so its ceiling rises from 302000 to 303100. Initial JavaScript, CSS, feature and literal ceilings are unchanged. The Group split files review adds exactly 6548 canonical locale bytes and 483 bytes to the largest catalog for three labels in all 24 locales; the desktop route grows 588 bytes (to 303640) for its menu entry, so its ceiling rises to 303700. The shared dialog chunk grows to 9 KB and still loads only when opened."
 }

@@ -1627,6 +1627,9 @@
     "moving": "Przenoszenie…",
     "skip": "Pomiń ten folder",
     "nothing": "Nie ma tu nic do posortowania.",
-    "done": "Gotowe. Przeniesione pliki: {{count}}."
+    "done": "Gotowe. Przeniesione pliki: {{count}}.",
+    "split_title": "Grupuj podzielone pliki",
+    "split_intro": "Każdy zestaw części trafia do osobnego folderu nazwanego jak cały plik. Potwierdzasz każdy folder przed przeniesieniem.",
+    "split_nothing": "Nie znaleziono tu podzielonych plików."
   }
 }

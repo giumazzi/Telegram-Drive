@@ -1613,6 +1613,9 @@
     "moving": "Wird verschoben…",
     "skip": "Diesen Ordner überspringen",
     "nothing": "Hier gibt es nichts zu sortieren.",
-    "done": "Fertig. Verschobene Dateien: {{count}}."
+    "done": "Fertig. Verschobene Dateien: {{count}}.",
+    "split_title": "Geteilte Dateien gruppieren",
+    "split_intro": "Jede Teilserie wird in einen eigenen Ordner mit dem Namen der ganzen Datei verschoben. Du bestätigst jeden Ordner, bevor etwas verschoben wird.",
+    "split_nothing": "Hier wurden keine geteilten Dateien gefunden."
   }
 }
