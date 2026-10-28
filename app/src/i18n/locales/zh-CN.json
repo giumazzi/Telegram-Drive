@@ -1590,5 +1590,29 @@
     "this_device": "由此设备上传",
     "other_device": "由另一台设备上传",
     "none": "最近 1,000 条收藏夹消息中未找到加密设置备份。"
+  },
+  "sort_folders": {
+    "title": "按类型整理",
+    "intro": "文件将按类型移动到对应的文件夹。分卷文件的各部分会保持在一起。每个文件夹在移动前都需要你确认。",
+    "loading": "正在读取文件详情…",
+    "details_unavailable": "无法读取文件详情,改为显示名称和上传日期。",
+    "step": "文件夹 {{current}}/{{total}}",
+    "destination": "目标:{{folder}}",
+    "destination_new": "目标:{{folder}}(将新建)",
+    "selected": "已选择:{{selected}}/{{total}}",
+    "select_all": "全选",
+    "select_none": "全不选",
+    "include": "包含 {{name}}",
+    "original_name": "原始名称:{{name}}",
+    "posted": "发布于 {{date}}",
+    "posted_by": "{{source}} 发布于 {{date}}",
+    "uploaded": "上传于 {{date}}",
+    "part": "第 {{part}} 部分",
+    "move": "移动所选",
+    "move_failed": "移动已中断。已移动的文件保持不变;请重试以移动其余文件。",
+    "moving": "正在移动…",
+    "skip": "跳过此文件夹",
+    "nothing": "这里没有需要整理的内容。",
+    "done": "完成。已移动文件:{{count}}"
   }
 }

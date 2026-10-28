@@ -1590,5 +1590,29 @@
     "this_device": "이 기기에서 업로드됨",
     "other_device": "다른 기기에서 업로드됨",
     "none": "최근 1,000개의 저장한 메시지에서 암호화 설정 백업을 찾지 못했습니다."
+  },
+  "sort_folders": {
+    "title": "유형별 정리",
+    "intro": "파일이 유형별로 하나의 폴더로 이동됩니다. 분할된 파일의 조각은 함께 유지됩니다. 이동하기 전에 폴더마다 확인합니다.",
+    "loading": "파일 세부 정보를 읽는 중…",
+    "details_unavailable": "파일 세부 정보를 읽을 수 없어 이름과 업로드 날짜를 대신 표시합니다.",
+    "step": "폴더 {{current}}/{{total}}",
+    "destination": "대상: {{folder}}",
+    "destination_new": "대상: {{folder}} (새로 만들어짐)",
+    "selected": "선택됨: {{selected}}/{{total}}",
+    "select_all": "모두 선택",
+    "select_none": "선택 해제",
+    "include": "{{name}} 포함",
+    "original_name": "원래 이름: {{name}}",
+    "posted": "{{date}}에 게시됨",
+    "posted_by": "{{date}}에 {{source}}에서 게시됨",
+    "uploaded": "{{date}}에 업로드됨",
+    "part": "조각 {{part}}",
+    "move": "선택 항목 이동",
+    "move_failed": "이동이 중단되었습니다. 이미 이동한 파일은 그대로 유지됩니다. 다시 시도하여 나머지를 이동하세요.",
+    "moving": "이동 중…",
+    "skip": "이 폴더 건너뛰기",
+    "nothing": "정리할 항목이 없습니다.",
+    "done": "완료. 이동한 파일: {{count}}"
   }
 }

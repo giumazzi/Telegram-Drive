@@ -1590,5 +1590,29 @@
     "this_device": "được tải lên bởi thiết bị này",
     "other_device": "được tải lên bởi thiết bị khác",
     "none": "Không tìm thấy bản sao lưu cài đặt mã hóa trong 1,000 Tin nhắn đã lưu gần nhất."
+  },
+  "sort_folders": {
+    "title": "Sắp xếp theo loại",
+    "intro": "Tệp được chuyển vào một thư mục cho mỗi loại. Các phần của tệp bị chia nhỏ luôn đi cùng nhau. Bạn xác nhận từng thư mục trước khi di chuyển.",
+    "loading": "Đang đọc thông tin tệp…",
+    "details_unavailable": "Không thể đọc thông tin tệp; thay vào đó hiển thị tên và ngày tải lên.",
+    "step": "Thư mục {{current}} / {{total}}",
+    "destination": "Đích: {{folder}}",
+    "destination_new": "Đích: {{folder}} (sẽ được tạo)",
+    "selected": "Đã chọn: {{selected}} / {{total}}",
+    "select_all": "Chọn tất cả",
+    "select_none": "Bỏ chọn tất cả",
+    "include": "Bao gồm {{name}}",
+    "original_name": "Tên gốc: {{name}}",
+    "posted": "Đăng ngày {{date}}",
+    "posted_by": "Đăng ngày {{date}} bởi {{source}}",
+    "uploaded": "Tải lên ngày {{date}}",
+    "part": "Phần {{part}}",
+    "move": "Di chuyển mục đã chọn",
+    "move_failed": "Việc di chuyển đã dừng. Các tệp đã di chuyển vẫn giữ nguyên; hãy thử lại để di chuyển phần còn lại.",
+    "moving": "Đang di chuyển…",
+    "skip": "Bỏ qua thư mục này",
+    "nothing": "Không có gì để sắp xếp ở đây.",
+    "done": "Xong. Số tệp đã di chuyển: {{count}}."
   }
 }

@@ -36,6 +36,7 @@ import { RenameFolderModal } from './dashboard/RenameFolderModal';
 import { RenameFileModal } from './dashboard/RenameFileModal';
 import { DesktopAdBanner } from './dashboard/DesktopAdBanner';
 import { RemoteUploadModal } from './dashboard/RemoteUploadModal';
+import { SortIntoFoldersDialog } from './dashboard/SortIntoFoldersDialog';
 import { KeyboardShortcutsDialog } from './dashboard/KeyboardShortcutsDialog';
 import { DriveConceptTour } from './dashboard/DriveConceptTour';
 import { LazyFeatureBoundary } from '../shared/LazyFeatureBoundary';
@@ -122,6 +123,8 @@ export function Dashboard({ onLogout }: { onLogout: () => void }) {
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [moveRequest, setMoveRequest] = useState<{ ownerId: string; files: TelegramFile[] } | null>(null);
     const showMoveModal = moveRequest?.ownerId === accountId;
+    const [sortRequest, setSortRequest] = useState<{ ownerId: string; folderId: number | null; files: TelegramFile[] } | null>(null);
+    const showSortDialog = sortRequest !== null && sortRequest.ownerId === accountId;
     const [showSettings, setShowSettings] = useState(false);
     const settingsModuleRequested = useRef(false);
     if (showSettings) settingsModuleRequested.current = true;
@@ -342,7 +345,7 @@ export function Dashboard({ onLogout }: { onLogout: () => void }) {
 
     const showSupporterOffer = useSupporterPrompt(
         Boolean(!accountId || isLoading || isSyncing || previewFile || playingFile || pdfFile || archiveViewFile
-            || localPreview || showSettings || showMoveModal || shareFile || showRemoteUpload || showHelp
+            || localPreview || showSettings || showMoveModal || showSortDialog || shareFile || showRemoteUpload || showHelp
             || showShortcuts || renameFolder || renameFileTarget || bulkShareLinks || bulkShareLoading
             || internalDrag || selectedIds.length || workspaceKeys !== null || searchTerm
             || uploadQueue.some(item => ['pending', 'uploading', 'downloading', 'encrypting', 'verifying'].includes(item.status))
@@ -520,7 +523,7 @@ export function Dashboard({ onLogout }: { onLogout: () => void }) {
         onRename: handleKeyboardRename,
         onShowShortcuts: () => setShowShortcuts(true),
         enabled: !previewFile && !playingFile && !pdfFile && !archiveViewFile
-            && !showMoveModal && !showSettings && !showShortcuts && !showHelp && !supporterOfferTrigger && workspaceKeys === null
+            && !showMoveModal && !showSortDialog && !showSettings && !showShortcuts && !showHelp && !supporterOfferTrigger && workspaceKeys === null
             && !showRemoteUpload && !shareFile && !bulkShareLinks
             && settings.driveTourSeen
     });
@@ -797,6 +800,18 @@ export function Dashboard({ onLogout }: { onLogout: () => void }) {
             />
 
             <AnimatePresence>
+                {showSortDialog && sortRequest && (
+                    <SortIntoFoldersDialog
+                        key={`sort:${sortRequest.ownerId}:${sortRequest.folderId ?? 'home'}`}
+                        ownerId={sortRequest.ownerId}
+                        sourceFolderId={sortRequest.folderId}
+                        files={sortRequest.files}
+                        folders={folders}
+                        onCreateFolder={handleCreateFolder}
+                        onMove={(files, targetFolderId) => handleMoveFiles(files, targetFolderId)}
+                        onClose={() => setSortRequest(null)}
+                    />
+                )}
                 {showMoveModal && moveRequest && (
                     <MoveToFolderModal
                         folders={folders}
@@ -877,7 +892,7 @@ export function Dashboard({ onLogout }: { onLogout: () => void }) {
                         }
                     } catch { /* backend error already toasted in hook */ }
                 }}
-                onCreate={handleCreateFolder}
+                onCreate={async name => { await handleCreateFolder(name); }}
                 isSyncing={isSyncing}
                 isConnected={isConnected}
                 onSync={() => void handleManualSync()}
@@ -920,6 +935,9 @@ export function Dashboard({ onLogout }: { onLogout: () => void }) {
                     onNewFolderClick={() => setCreateFolderRequest((value) => value + 1)}
                     onShowShortcuts={() => setShowShortcuts(true)}
                     onShowHelp={() => setShowHelp(true)}
+                    onSortIntoFoldersClick={accountId && activeSmartView === null && searchFilters.scope !== 'all'
+                        ? () => setSortRequest({ ownerId: accountId, folderId: activeFolderId, files: allFiles })
+                        : undefined}
                 />
                 {(searchTerm.trim().length > 0 || searchFilters.type !== 'all' || searchFilters.size !== 'any' || searchFilters.date !== 'any') && (
                     <div className="px-3 pb-0 pt-3">

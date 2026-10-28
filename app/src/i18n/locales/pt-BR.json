@@ -1597,5 +1597,29 @@
     "this_device": "enviado por este dispositivo",
     "other_device": "enviado por outro dispositivo",
     "none": "Nenhum backup criptografado de configurações nas últimas 1,000 Mensagens salvas."
+  },
+  "sort_folders": {
+    "title": "Organizar por tipo",
+    "intro": "Os arquivos são movidos para uma pasta por tipo. As partes de arquivos divididos ficam juntas. Você confirma cada pasta antes de qualquer movimentação.",
+    "loading": "Lendo os detalhes dos arquivos…",
+    "details_unavailable": "Não foi possível ler os detalhes; são exibidos os nomes e as datas de envio.",
+    "step": "Pasta {{current}} de {{total}}",
+    "destination": "Destino: {{folder}}",
+    "destination_new": "Destino: {{folder}} (será criada)",
+    "selected": "Selecionados: {{selected}} de {{total}}",
+    "select_all": "Selecionar tudo",
+    "select_none": "Não selecionar nada",
+    "include": "Incluir {{name}}",
+    "original_name": "Nome original: {{name}}",
+    "posted": "Publicado em {{date}}",
+    "posted_by": "Publicado em {{date}} por {{source}}",
+    "uploaded": "Enviado em {{date}}",
+    "part": "Parte {{part}}",
+    "move": "Mover selecionados",
+    "move_failed": "A movimentação parou. Os arquivos já movidos continuam no novo local; tente novamente para mover o restante.",
+    "moving": "Movendo…",
+    "skip": "Pular esta pasta",
+    "nothing": "Não há nada para organizar aqui.",
+    "done": "Pronto. Arquivos movidos: {{count}}."
   }
 }

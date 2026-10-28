@@ -5,6 +5,7 @@ import {
     Download,
     FolderInput,
     FolderPlus,
+    FolderTree,
     Filter,
     Globe,
     HardDrive,
@@ -56,6 +57,8 @@ interface TopBarProps {
     onNewFolderClick: () => void;
     onShowShortcuts: () => void;
     onShowHelp: () => void;
+    /** Present only while a real folder (not a smart view or global search) is shown. */
+    onSortIntoFoldersClick?: () => void;
     searchFilters: FileSearchFilters;
     onSearchFiltersChange: (filters: FileSearchFilters) => void;
 }
@@ -84,6 +87,7 @@ export function TopBar({
     onNewFolderClick,
     onShowShortcuts,
     onShowHelp,
+    onSortIntoFoldersClick,
     searchFilters,
     onSearchFiltersChange,
 }: TopBarProps) {
@@ -329,6 +333,12 @@ export function TopBar({
                                         <HardDrive className="h-3.5 w-3.5 text-app-text-secondary" />
                                         {t('files.download_folder')}
                                     </MenuItem>
+                                    {onSortIntoFoldersClick && (
+                                        <MenuItem onClick={() => runMoreAction(onSortIntoFoldersClick)}>
+                                            <FolderTree className="h-3.5 w-3.5 text-app-text-secondary" />
+                                            {t('sort_folders.title')}
+                                        </MenuItem>
+                                    )}
                                     <MenuItem onClick={() => runMoreAction(onRemoteUploadClick)}>
                                         <Globe className="h-3.5 w-3.5 text-app-text-secondary" />
                                         {t('files.remote_upload')}

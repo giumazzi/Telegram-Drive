@@ -56,6 +56,8 @@ pub mod crash_reporting;
 pub mod download_destination;
 pub mod file_activity;
 pub mod file_inventory;
+pub mod file_moves;
+pub mod file_origins;
 pub mod folder_groups;
 pub mod fs;
 pub mod network;

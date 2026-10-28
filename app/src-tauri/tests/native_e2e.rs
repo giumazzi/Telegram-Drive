@@ -481,6 +481,144 @@ fn disconnected_folder_changes_fail_without_touching_local_records() {
     app.stop();
 }
 
+// The organiser shows what a file is before moving it. Telegram's
+// getMessages response is a controlled fixture; the description is production.
+#[test]
+fn file_origins_describe_forwarded_files_without_revealing_protected_ones() {
+    let fixture = Fixture::new();
+    let mut app = Backend::start(&fixture.0);
+    let origins = app.ok(json!({
+        "command": "file_origins",
+        "requested": [11, 12, 13, 14, 15, 16, 17],
+        "channels": [{"id": 900, "title": "Film Classici"}],
+        "messages": [
+            {"id": 11, "fileName": "Casablanca.1942.mkv.001",
+             "caption": "Casablanca (1942) – parte 1",
+             "forwarded": {"date": 1_500_000_000, "channelId": 900}},
+            {"id": 12, "photo": true, "caption": "Spiaggia",
+             "forwarded": {"date": 1_600_000_000, "fromName": "Account nascosto"}},
+            {"id": 13, "fileName": "track01.mp3", "audioTitle": "Volare",
+             "audioPerformer": "Domenico Modugno"},
+            {"id": 14, "fileName": "secret.tdenc", "caption": "TDENC2",
+             "forwarded": {"date": 1_500_000_000, "channelId": 900}},
+            {"id": 15, "text": true, "caption": "only text"},
+            {"id": 17, "fileName": "notes.pdf", "caption": "x".repeat(400)}
+        ]
+    }));
+    let origins = origins.as_array().unwrap();
+    assert_eq!(origins.len(), 7);
+    assert_eq!(
+        origins[0],
+        json!({"id": 11, "originalName": "Casablanca.1942.mkv.001",
+            "caption": "Casablanca (1942) – parte 1",
+            "originalDate": "2017-07-14T02:40:00+00:00", "source": "Film Classici"})
+    );
+    assert_eq!(
+        origins[1],
+        json!({"id": 12, "originalName": null, "caption": "Spiaggia",
+            "originalDate": "2020-09-13T12:26:40+00:00", "source": "Account nascosto"})
+    );
+    assert_eq!(origins[2]["originalName"], "Domenico Modugno – Volare");
+    assert_eq!(origins[2]["originalDate"], Value::Null);
+    let described_only_by_id =
+        json!({"originalName": null, "caption": null, "originalDate": null, "source": null});
+    for (index, id) in [(3, 14), (4, 15), (5, 16)] {
+        let mut expected = described_only_by_id.clone();
+        expected["id"] = json!(id);
+        assert_eq!(origins[index], expected, "message {id}");
+    }
+    assert_eq!(origins[6]["caption"].as_str().unwrap().chars().count(), 300);
+    app.stop();
+}
+
+// Telegram forwards and deletes at most 100 messages per request. The move
+// runs through the production batching; Telegram is a recording stand-in.
+#[test]
+fn moving_more_than_one_hundred_files_runs_in_verified_batches() {
+    fn shape(result: &Value) -> Vec<(String, usize)> {
+        result["calls"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|call| {
+                (
+                    call["op"].as_str().unwrap().to_string(),
+                    call["ids"].as_array().unwrap().len(),
+                )
+            })
+            .collect()
+    }
+    let steps = |list: &[(&str, usize)]| -> Vec<(String, usize)> {
+        list.iter()
+            .map(|(op, len)| (op.to_string(), *len))
+            .collect()
+    };
+    let fixture = Fixture::new();
+    let mut app = Backend::start(&fixture.0);
+
+    let result = app.ok(json!({"command":"files_move","count":250}));
+    assert_eq!(result["error"], Value::Null, "{result}");
+    assert_eq!(
+        shape(&result),
+        steps(&[
+            ("forward", 100),
+            ("delete", 100),
+            ("forward", 100),
+            ("delete", 100),
+            ("forward", 50),
+            ("delete", 50)
+        ])
+    );
+    let moved = result["moved"].as_array().unwrap();
+    assert_eq!(moved.len(), 250);
+    assert_eq!(moved[0], json!([1, 10_001]));
+    assert_eq!(moved[249], json!([250, 10_250]));
+
+    let small = app.ok(json!({"command":"files_move","count":3}));
+    assert_eq!(shape(&small), steps(&[("forward", 3), ("delete", 3)]));
+
+    // A failed batch keeps its originals and stops; earlier batches stay moved.
+    let interrupted = app.ok(json!({"command":"files_move","count":250,"failForwardAt":1}));
+    assert_eq!(
+        shape(&interrupted),
+        steps(&[("forward", 100), ("delete", 100), ("forward", 100)])
+    );
+    assert_eq!(interrupted["moved"].as_array().unwrap().len(), 100);
+    let message = interrupted["error"].as_str().unwrap();
+    assert!(
+        message.starts_with("Moved 100 of 250 files; the rest were kept"),
+        "{message}"
+    );
+
+    // An incomplete copy never deletes its originals.
+    let incomplete = app.ok(json!({"command":"files_move","count":150,"dropCopyAt":0}));
+    assert_eq!(shape(&incomplete), steps(&[("forward", 100)]));
+    assert_eq!(incomplete["moved"], json!([]));
+    assert_eq!(
+        incomplete["error"],
+        "Some files were not copied; the originals were kept"
+    );
+
+    // An account change between copy and delete never deletes through it.
+    let switched = app.ok(json!({"command":"files_move","count":150,"accountChangesAt":1}));
+    assert_eq!(
+        shape(&switched),
+        steps(&[("forward", 100), ("delete", 100), ("forward", 50)])
+    );
+    assert!(switched["error"]
+        .as_str()
+        .unwrap()
+        .contains("ACCOUNT_CHANGED"));
+
+    let undeleted = app.ok(json!({"command":"files_move","count":20,"failDeleteAt":0}));
+    assert_eq!(undeleted["moved"], json!([]));
+    assert!(undeleted["error"]
+        .as_str()
+        .unwrap()
+        .starts_with("Delete original failed"));
+    app.stop();
+}
+
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn media_server_uses_the_preferred_port_and_falls_back_when_it_is_taken() {
     let client = reqwest::Client::builder()

@@ -1590,5 +1590,29 @@
     "this_device": "na-upload ng device na ito",
     "other_device": "na-upload ng ibang device",
     "none": "Walang naka-encrypt na settings backup sa pinakabagong 1,000 Saved Messages."
+  },
+  "sort_folders": {
+    "title": "Ayusin ayon sa uri",
+    "intro": "Inililipat ang mga file sa isang folder para sa bawat uri. Magkakasama ang mga bahagi ng hinating file. Kinukumpirma mo ang bawat folder bago may mailipat.",
+    "loading": "Binabasa ang mga detalye ng file…",
+    "details_unavailable": "Hindi mabasa ang mga detalye ng file; ipinapakita na lang ang mga pangalan at petsa ng pag-upload.",
+    "step": "Folder {{current}} sa {{total}}",
+    "destination": "Patutunguhan: {{folder}}",
+    "destination_new": "Patutunguhan: {{folder}} (gagawin ito)",
+    "selected": "Napili: {{selected}} sa {{total}}",
+    "select_all": "Piliin lahat",
+    "select_none": "Walang pipiliin",
+    "include": "Isama ang {{name}}",
+    "original_name": "Orihinal na pangalan: {{name}}",
+    "posted": "Nai-post noong {{date}}",
+    "posted_by": "Nai-post noong {{date}} ni {{source}}",
+    "uploaded": "Na-upload noong {{date}}",
+    "part": "Bahagi {{part}}",
+    "move": "Ilipat ang napili",
+    "move_failed": "Huminto ang paglilipat. Mananatili ang mga nailipat na file; subukang muli para ilipat ang natitira.",
+    "moving": "Inililipat…",
+    "skip": "Laktawan ang folder na ito",
+    "nothing": "Walang aayusin dito.",
+    "done": "Tapos na. Mga nailipat na file: {{count}}."
   }
 }

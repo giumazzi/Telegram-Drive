@@ -1604,5 +1604,29 @@
     "this_device": "wysłana przez to urządzenie",
     "other_device": "wysłana przez inne urządzenie",
     "none": "Nie znaleziono zaszyfrowanej kopii ustawień w ostatnich 1,000 Zapisanych wiadomościach."
+  },
+  "sort_folders": {
+    "title": "Sortuj według typu",
+    "intro": "Pliki są przenoszone do osobnego folderu dla każdego typu. Części podzielonych plików pozostają razem. Potwierdzasz każdy folder przed przeniesieniem.",
+    "loading": "Odczytywanie szczegółów plików…",
+    "details_unavailable": "Nie udało się odczytać szczegółów; zamiast nich pokazano nazwy i daty przesłania.",
+    "step": "Folder {{current}} z {{total}}",
+    "destination": "Miejsce docelowe: {{folder}}",
+    "destination_new": "Miejsce docelowe: {{folder}} (zostanie utworzony)",
+    "selected": "Zaznaczono: {{selected}} z {{total}}",
+    "select_all": "Zaznacz wszystko",
+    "select_none": "Odznacz wszystko",
+    "include": "Uwzględnij {{name}}",
+    "original_name": "Oryginalna nazwa: {{name}}",
+    "posted": "Opublikowano {{date}}",
+    "posted_by": "Opublikowano {{date}}, źródło: {{source}}",
+    "uploaded": "Przesłano {{date}}",
+    "part": "Część {{part}}",
+    "move": "Przenieś zaznaczone",
+    "move_failed": "Przenoszenie zostało przerwane. Już przeniesione pliki pozostają na miejscu; spróbuj ponownie, aby przenieść resztę.",
+    "moving": "Przenoszenie…",
+    "skip": "Pomiń ten folder",
+    "nothing": "Nie ma tu nic do posortowania.",
+    "done": "Gotowe. Przeniesione pliki: {{count}}."
   }
 }

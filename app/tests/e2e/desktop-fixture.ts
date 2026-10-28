@@ -6,6 +6,15 @@ import type { Page } from '@playwright/test';
 export async function desktopFixture(page: Page, options: {
   pickedUploadPaths?: string[];
   zippedFolderPath?: string;
+  /** Replaces the Saved Messages listing with these files (folder_id null). */
+  savedFiles?: Record<string, unknown>[];
+  /** Additional Telegram Drive folders beside Photos (id 9). */
+  extraFolders?: { id: number; name: string }[];
+  /** What cmd_get_file_origins reports per message id; others are id-only. */
+  fileOrigins?: Record<number, Record<string, unknown>>;
+  originsFail?: boolean;
+  /** Zero-based cmd_move_files calls that fail without moving their files. */
+  moveFailAt?: number[];
   accountFailures?: number;
   holdFiles?: boolean;
   holdStartupHealth?: boolean;
@@ -70,6 +79,7 @@ export async function desktopFixture(page: Page, options: {
       releaseStartupHealth:()=>{state.holdStartupHealth=false;releaseStartupHealth?.();},
       searchHold:false, searchFails:false, searchPageSize:256, searchBuilding:0, searchDuplicateIds:false, releaseSearch:()=>{state.searchHold=false;releaseSearch?.();},
       quotaSaveFails:false, weeklyQuota:Number(localStorage.getItem('desktop-e2e-weekly-quota') ?? 250 * 1024 ** 3),
+      savedFiles: [...(options.savedFiles ?? [])] as any[], createdFolders: 0, moveCalls: 0,
       owner: '101', accountFailures: options.accountFailures ?? 0, holdFiles: options.holdFiles ?? false,
       holdSupporter: options.holdSupporter ?? false, supporterState: options.supporterState ?? 'active',
       supporterRefreshFails: options.supporterState === 'needs_refresh',
@@ -148,7 +158,17 @@ export async function desktopFixture(page: Page, options: {
             if (state.accountFailures-- > 0) throw new Error('ACCOUNT_UNAVAILABLE: Session temporarily busy');
             return state.owner;
           }
-          if (command === 'cmd_get_enriched_folders' || command === 'cmd_scan_folders') return [{ id: 9, name: 'Photos', file_count: 1 }];
+          if (command === 'cmd_get_enriched_folders' || command === 'cmd_scan_folders') return [{ id: 9, name: 'Photos', file_count: 1 }, ...(options.extraFolders ?? [])];
+          if (command === 'cmd_get_file_origins') {
+            if (options.originsFail) throw new Error('Client not connected');
+            return args.messageIds.map((id: number) => ({ id, originalName: null, caption: null, originalDate: null, source: null, ...(options.fileOrigins?.[id] ?? {}) }));
+          }
+          if (command === 'cmd_create_folder') { state.createdFolders++; return { id: 500 + state.createdFolders, name: args.name }; }
+          if (command === 'cmd_move_files') {
+            if (options.moveFailAt?.includes(state.moveCalls++)) throw new Error('Forward failed: connection reset by peer');
+            state.savedFiles = state.savedFiles.filter((saved: any) => !args.messageIds.includes(saved.id));
+            return true;
+          }
           // Folder Sync: settings and mappings are kept by this fixture; the
           // plan a preview returns is a stand-in for the native planner.
           if (command === 'cmd_get_sync_settings') return state.sync.settings;
@@ -183,7 +203,9 @@ export async function desktopFixture(page: Page, options: {
               throw new Error('VAULT_LOCKED: Publication revoked');
             }
             if (state.holdFiles && owner === '101') await fileGate;
-            const files = [{ ...file(42, args.folderId, owner), ...(state.inventoryName ? { name: state.inventoryName } : {}) }];
+            const files = options.savedFiles && args.folderId === null
+              ? state.savedFiles.map((saved: any) => ({ ...file(saved.id, null, owner), ...saved }))
+              : [{ ...file(42, args.folderId, owner), ...(state.inventoryName ? { name: state.inventoryName } : {}) }];
             if (options.extraPhoto) files.push({...file(43,args.folderId,owner),name:'Holiday second photo.jpg'});
             if (options.pdfBase64) files.push({ ...file(77, args.folderId, owner), name: 'Fixture report.pdf', mime_type: 'application/pdf', file_ext: 'pdf', type: 'document' });
             const result = { ownerId: owner, folderId: args.folderId, requestId: args.requestId, files };

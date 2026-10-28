@@ -1590,5 +1590,29 @@
     "this_device": "このデバイスからアップロード",
     "other_device": "別のデバイスからアップロード",
     "none": "最近の1,000件の保存したメッセージに暗号化設定バックアップはありません。"
+  },
+  "sort_folders": {
+    "title": "種類別に整理",
+    "intro": "ファイルは種類ごとに1つのフォルダーへ移動されます。分割ファイルのパートはまとめて扱われます。移動の前にフォルダーごとに確認します。",
+    "loading": "ファイルの詳細を読み込んでいます…",
+    "details_unavailable": "ファイルの詳細を読み込めませんでした。代わりに名前とアップロード日を表示しています。",
+    "step": "フォルダー {{current}} / {{total}}",
+    "destination": "移動先: {{folder}}",
+    "destination_new": "移動先: {{folder}}(新規作成)",
+    "selected": "選択中: {{selected}} / {{total}}",
+    "select_all": "すべて選択",
+    "select_none": "選択を解除",
+    "include": "{{name}} を含める",
+    "original_name": "元の名前: {{name}}",
+    "posted": "{{date}} に投稿",
+    "posted_by": "{{date}} に {{source}} が投稿",
+    "uploaded": "{{date}} にアップロード",
+    "part": "パート {{part}}",
+    "move": "選択項目を移動",
+    "move_failed": "移動が中断されました。移動済みのファイルはそのままです。もう一度試して残りを移動してください。",
+    "moving": "移動中…",
+    "skip": "このフォルダーをスキップ",
+    "nothing": "ここに整理するものはありません。",
+    "done": "完了しました。移動したファイル: {{count}}"
   }
 }

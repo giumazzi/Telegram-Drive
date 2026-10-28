@@ -1435,6 +1435,7 @@ pub fn run() {
             commands::cmd_delete_file,
             commands::cmd_download_file,
             commands::cmd_move_files,
+            commands::file_origins::cmd_get_file_origins,
             commands::cmd_create_folder,
             commands::cmd_delete_folder,
             commands::cmd_rename_folder,

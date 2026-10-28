@@ -1590,5 +1590,29 @@
     "this_device": "von diesem Gerät hochgeladen",
     "other_device": "von einem anderen Gerät hochgeladen",
     "none": "Keine verschlüsselte Einstellungssicherung in den neuesten 1,000 Gespeicherten Nachrichten gefunden."
+  },
+  "sort_folders": {
+    "title": "Nach Typ sortieren",
+    "intro": "Dateien werden in je einen Ordner pro Typ verschoben. Teile geteilter Dateien bleiben zusammen. Du bestätigst jeden Ordner, bevor etwas verschoben wird.",
+    "loading": "Dateidetails werden gelesen…",
+    "details_unavailable": "Dateidetails konnten nicht gelesen werden; stattdessen werden Namen und Upload-Daten angezeigt.",
+    "step": "Ordner {{current}} von {{total}}",
+    "destination": "Ziel: {{folder}}",
+    "destination_new": "Ziel: {{folder}} (wird erstellt)",
+    "selected": "Ausgewählt: {{selected}} von {{total}}",
+    "select_all": "Alle auswählen",
+    "select_none": "Keine auswählen",
+    "include": "{{name}} einbeziehen",
+    "original_name": "Originalname: {{name}}",
+    "posted": "Veröffentlicht am {{date}}",
+    "posted_by": "Veröffentlicht am {{date}} von {{source}}",
+    "uploaded": "Hochgeladen am {{date}}",
+    "part": "Teil {{part}}",
+    "move": "Auswahl verschieben",
+    "move_failed": "Das Verschieben wurde unterbrochen. Bereits verschobene Dateien bleiben verschoben; versuche es erneut, um den Rest zu verschieben.",
+    "moving": "Wird verschoben…",
+    "skip": "Diesen Ordner überspringen",
+    "nothing": "Hier gibt es nichts zu sortieren.",
+    "done": "Fertig. Verschobene Dateien: {{count}}."
   }
 }

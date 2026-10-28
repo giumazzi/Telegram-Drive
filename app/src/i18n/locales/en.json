@@ -1590,5 +1590,29 @@
     "this_device": "uploaded by this device",
     "other_device": "uploaded by another device",
     "none": "No encrypted settings backup was found in the latest 1,000 Saved Messages."
+  },
+  "sort_folders": {
+    "title": "Sort by type",
+    "intro": "Files move into one folder per type. Parts of split files stay together. You confirm each folder before anything moves.",
+    "loading": "Reading file details…",
+    "details_unavailable": "File details could not be read; names and upload dates are shown instead.",
+    "step": "Folder {{current}} of {{total}}",
+    "destination": "Destination: {{folder}}",
+    "destination_new": "Destination: {{folder}} (it will be created)",
+    "selected": "Selected: {{selected}} of {{total}}",
+    "select_all": "Select all",
+    "select_none": "Select none",
+    "include": "Include {{name}}",
+    "original_name": "Original name: {{name}}",
+    "posted": "Posted on {{date}}",
+    "posted_by": "Posted on {{date}} by {{source}}",
+    "uploaded": "Uploaded on {{date}}",
+    "part": "Part {{part}}",
+    "move": "Move selected",
+    "move_failed": "The move stopped. Files already moved stay moved; try again to move the rest.",
+    "moving": "Moving…",
+    "skip": "Skip this folder",
+    "nothing": "There is nothing to sort here.",
+    "done": "Done. Files moved: {{count}}."
   }
 }

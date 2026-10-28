@@ -1590,5 +1590,29 @@
     "this_device": "diunggah oleh perangkat ini",
     "other_device": "diunggah oleh perangkat lain",
     "none": "Tidak ditemukan cadangan pengaturan terenkripsi dalam 1,000 Pesan Tersimpan terbaru."
+  },
+  "sort_folders": {
+    "title": "Urutkan menurut jenis",
+    "intro": "File dipindahkan ke satu folder untuk setiap jenis. Bagian dari file yang dipecah tetap bersama. Anda mengonfirmasi setiap folder sebelum ada yang dipindahkan.",
+    "loading": "Membaca detail file…",
+    "details_unavailable": "Detail file tidak dapat dibaca; nama dan tanggal unggah ditampilkan sebagai gantinya.",
+    "step": "Folder {{current}} dari {{total}}",
+    "destination": "Tujuan: {{folder}}",
+    "destination_new": "Tujuan: {{folder}} (akan dibuat)",
+    "selected": "Dipilih: {{selected}} dari {{total}}",
+    "select_all": "Pilih semua",
+    "select_none": "Jangan pilih apa pun",
+    "include": "Sertakan {{name}}",
+    "original_name": "Nama asli: {{name}}",
+    "posted": "Diposting pada {{date}}",
+    "posted_by": "Diposting pada {{date}} oleh {{source}}",
+    "uploaded": "Diunggah pada {{date}}",
+    "part": "Bagian {{part}}",
+    "move": "Pindahkan yang dipilih",
+    "move_failed": "Pemindahan terhenti. File yang sudah dipindahkan tetap di tempatnya; coba lagi untuk memindahkan sisanya.",
+    "moving": "Memindahkan…",
+    "skip": "Lewati folder ini",
+    "nothing": "Tidak ada yang perlu diurutkan di sini.",
+    "done": "Selesai. File dipindahkan: {{count}}."
   }
 }

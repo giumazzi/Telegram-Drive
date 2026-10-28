@@ -1590,5 +1590,29 @@
     "this_device": "dimuat naik oleh peranti ini",
     "other_device": "dimuat naik oleh peranti lain",
     "none": "Tiada sandaran tetapan disulitkan dalam 1,000 Mesej Tersimpan terkini."
+  },
+  "sort_folders": {
+    "title": "Isih mengikut jenis",
+    "intro": "Fail dipindahkan ke satu folder bagi setiap jenis. Bahagian fail yang dipecahkan kekal bersama. Anda mengesahkan setiap folder sebelum apa-apa dipindahkan.",
+    "loading": "Membaca butiran fail…",
+    "details_unavailable": "Butiran fail tidak dapat dibaca; nama dan tarikh muat naik dipaparkan sebaliknya.",
+    "step": "Folder {{current}} daripada {{total}}",
+    "destination": "Destinasi: {{folder}}",
+    "destination_new": "Destinasi: {{folder}} (akan dicipta)",
+    "selected": "Dipilih: {{selected}} daripada {{total}}",
+    "select_all": "Pilih semua",
+    "select_none": "Nyahpilih semua",
+    "include": "Sertakan {{name}}",
+    "original_name": "Nama asal: {{name}}",
+    "posted": "Disiarkan pada {{date}}",
+    "posted_by": "Disiarkan pada {{date}} oleh {{source}}",
+    "uploaded": "Dimuat naik pada {{date}}",
+    "part": "Bahagian {{part}}",
+    "move": "Pindahkan pilihan",
+    "move_failed": "Pemindahan terhenti. Fail yang sudah dipindahkan kekal di tempatnya; cuba lagi untuk memindahkan selebihnya.",
+    "moving": "Sedang memindahkan…",
+    "skip": "Langkau folder ini",
+    "nothing": "Tiada apa-apa untuk diisih di sini.",
+    "done": "Selesai. Fail dipindahkan: {{count}}."
   }
 }

@@ -130,7 +130,10 @@ export function useFileOperations(
             onSuccess?.();
             return true;
         } catch (error) {
-            if (isCurrent()) toast.error(userFacingError(error, t));
+            if (!isCurrent()) return false;
+            // A large move can stop after some batches already moved.
+            void invalidateOwnedFileQueries(queryClient, ownerId);
+            toast.error(userFacingError(error, t));
             return false;
         }
     }, [activeFolderId, capture, confirm, ownerId, queryClient, t]);

@@ -77,6 +77,179 @@ impl crate::resumable_upload::PartSink for FixtureSink {
     }
 }
 
+/// Stands in for Telegram when files move between folders: records every
+/// forward and delete request, and can refuse one batch to interrupt a move.
+struct FixtureMover {
+    fail_forward_at: Option<usize>,
+    drop_copy_at: Option<usize>,
+    fail_delete_at: Option<usize>,
+    calls: std::sync::Mutex<Vec<Value>>,
+}
+
+impl FixtureMover {
+    fn record(&self, operation: &str, ids: &[i32]) -> Result<usize, String> {
+        let mut calls = self
+            .calls
+            .lock()
+            .map_err(|_| "Fixture mover lock poisoned".to_string())?;
+        let batch = calls.iter().filter(|call| call["op"] == operation).count();
+        calls.push(json!({"op": operation, "ids": ids}));
+        Ok(batch)
+    }
+}
+
+impl crate::commands::file_moves::MessageMover for FixtureMover {
+    async fn forward(&self, ids: &[i32]) -> Result<Vec<Option<i32>>, String> {
+        let batch = self.record("forward", ids)?;
+        if ids.len() > crate::commands::file_moves::MOVE_BATCH {
+            return Err("MESSAGE_IDS_TOO_MUCH".into());
+        }
+        if self.fail_forward_at == Some(batch) {
+            return Err("Forward failed: connection reset by peer".into());
+        }
+        Ok(ids
+            .iter()
+            .enumerate()
+            .map(|(index, id)| {
+                (self.drop_copy_at != Some(batch) || index != 0).then_some(id + 10_000)
+            })
+            .collect())
+    }
+
+    async fn delete(&self, ids: &[i32]) -> Result<(), String> {
+        let batch = self.record("delete", ids)?;
+        if ids.len() > crate::commands::file_moves::MOVE_BATCH {
+            return Err("MESSAGE_IDS_TOO_MUCH".into());
+        }
+        if self.fail_delete_at == Some(batch) {
+            return Err("Delete original failed: connection reset by peer".into());
+        }
+        Ok(())
+    }
+}
+
+/// A Telegram message as `getMessages` returns it, built from a journey's
+/// description of the file, its caption and where it was forwarded from.
+fn fixture_tl_message(spec: &Value) -> grammers_tl_types::enums::Message {
+    use grammers_tl_types as tl;
+    let attributes = spec["fileName"]
+        .as_str()
+        .map(|name| {
+            tl::enums::DocumentAttribute::Filename(tl::types::DocumentAttributeFilename {
+                file_name: name.into(),
+            })
+        })
+        .into_iter()
+        .chain(spec["audioTitle"].as_str().map(|title| {
+            tl::enums::DocumentAttribute::Audio(tl::types::DocumentAttributeAudio {
+                voice: false,
+                duration: 180,
+                title: Some(title.into()),
+                performer: spec["audioPerformer"].as_str().map(str::to_string),
+                waveform: None,
+            })
+        }))
+        .collect();
+    let media = if spec["photo"] == true {
+        tl::enums::MessageMedia::Photo(tl::types::MessageMediaPhoto {
+            spoiler: false,
+            photo: None,
+            ttl_seconds: None,
+        })
+    } else {
+        tl::enums::MessageMedia::Document(tl::types::MessageMediaDocument {
+            nopremium: false,
+            spoiler: false,
+            video: false,
+            round: false,
+            voice: false,
+            document: Some(tl::enums::Document::Document(tl::types::Document {
+                id: 1,
+                access_hash: 1,
+                file_reference: Vec::new(),
+                date: 0,
+                mime_type: "application/octet-stream".into(),
+                size: 1,
+                thumbs: None,
+                video_thumbs: None,
+                dc_id: 2,
+                attributes,
+            })),
+            alt_documents: None,
+            video_cover: None,
+            video_timestamp: None,
+            ttl_seconds: None,
+        })
+    };
+    let forward = &spec["forwarded"];
+    let fwd_from = forward.is_object().then(|| {
+        tl::enums::MessageFwdHeader::Header(tl::types::MessageFwdHeader {
+            imported: false,
+            saved_out: false,
+            from_id: forward["channelId"]
+                .as_i64()
+                .map(|channel_id| tl::enums::Peer::Channel(tl::types::PeerChannel { channel_id })),
+            from_name: forward["fromName"].as_str().map(str::to_string),
+            date: forward["date"].as_i64().unwrap_or_default() as i32,
+            channel_post: None,
+            post_author: None,
+            saved_from_peer: None,
+            saved_from_msg_id: None,
+            saved_from_id: None,
+            saved_from_name: None,
+            saved_date: None,
+            psa_type: None,
+        })
+    });
+    tl::enums::Message::Message(tl::types::Message {
+        out: true,
+        mentioned: false,
+        media_unread: false,
+        silent: false,
+        post: false,
+        from_scheduled: false,
+        legacy: false,
+        edit_hide: false,
+        pinned: false,
+        noforwards: false,
+        invert_media: false,
+        offline: false,
+        video_processing_pending: false,
+        paid_suggested_post_stars: false,
+        paid_suggested_post_ton: false,
+        id: spec["id"].as_i64().unwrap_or_default() as i32,
+        from_id: None,
+        from_boosts_applied: None,
+        peer_id: tl::enums::Peer::User(tl::types::PeerUser { user_id: 101 }),
+        saved_peer_id: None,
+        fwd_from,
+        via_bot_id: None,
+        via_business_bot_id: None,
+        reply_to: None,
+        date: 1_780_000_000,
+        message: spec["caption"].as_str().unwrap_or_default().into(),
+        media: (spec["text"] != true).then_some(media),
+        reply_markup: None,
+        entities: None,
+        views: None,
+        forwards: None,
+        replies: None,
+        edit_date: None,
+        post_author: None,
+        grouped_id: None,
+        reactions: None,
+        restriction_reason: None,
+        ttl_period: None,
+        quick_reply_shortcut_id: None,
+        effect: None,
+        factcheck: None,
+        report_delivery_until_date: None,
+        paid_message_stars: None,
+        suggested_post: None,
+        schedule_repeat_period: None,
+    })
+}
+
 struct FixtureProxySecret(PathBuf);
 impl crate::vpn_optimizer::ProxySecretStore for FixtureProxySecret {
     fn read(&self) -> Result<Option<String>, String> {
@@ -1272,7 +1445,9 @@ impl Driver {
             | "read_envelope" => self.dispatch_crypto(request).await,
             "folder_create" | "folder_delete" | "folder_rename" | "folder_layout"
             | "folder_scan" | "group_create" | "folder_assign" | "folder_sign_out"
-            | "folder_rows" | "seed_folder_row" => self.dispatch_folders(request).await,
+            | "folder_rows" | "seed_folder_row" | "files_move" | "file_origins" => {
+                self.dispatch_folders(request).await
+            }
             "staging_root" | "log_start" | "log_emit" | "startup_failure_message" => {
                 self.dispatch_diagnostics(request).await
             }
@@ -4128,6 +4303,77 @@ impl Driver {
 
     async fn dispatch_folders(&mut self, request: Value) -> Result<Value, String> {
         match text(&request, "command")? {
+            "file_origins" => {
+                // A controlled getMessages response, described by the journey.
+                let messages: Vec<_> = request["messages"]
+                    .as_array()
+                    .ok_or("Missing messages")?
+                    .iter()
+                    .map(fixture_tl_message)
+                    .collect();
+                let chats: Vec<_> = request["channels"]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                    .map(|channel| {
+                        grammers_tl_types::enums::Chat::ChannelForbidden(
+                            grammers_tl_types::types::ChannelForbidden {
+                                broadcast: true,
+                                megagroup: false,
+                                id: channel["id"].as_i64().unwrap_or_default(),
+                                access_hash: 0,
+                                title: channel["title"].as_str().unwrap_or_default().into(),
+                                until_date: None,
+                            },
+                        )
+                    })
+                    .collect();
+                let requested: Vec<i32> = request["requested"]
+                    .as_array()
+                    .ok_or("Missing requested")?
+                    .iter()
+                    .filter_map(|id| id.as_i64().map(|id| id as i32))
+                    .collect();
+                serde_json::to_value(crate::commands::file_origins::origins_from_messages(
+                    &requested,
+                    &messages,
+                    &chats,
+                    &[],
+                ))
+                .map_err(error)
+            }
+            "files_move" => {
+                // The production batching over a controlled Telegram stand-in.
+                let count = request["count"].as_u64().ok_or("Missing count")? as i32;
+                let ids: Vec<i32> = (1..=count).collect();
+                let batch = |key: &str| request[key].as_u64().map(|index| index as usize);
+                let mover = FixtureMover {
+                    fail_forward_at: batch("failForwardAt"),
+                    drop_copy_at: batch("dropCopyAt"),
+                    fail_delete_at: batch("failDeleteAt"),
+                    calls: std::sync::Mutex::new(Vec::new()),
+                };
+                let account_changes_at = batch("accountChangesAt");
+                let checks = std::sync::atomic::AtomicUsize::new(0);
+                let outcome = crate::commands::file_moves::move_in_batches(&mover, &ids, || {
+                    let check = checks.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                    if account_changes_at == Some(check) {
+                        Err("ACCOUNT_CHANGED: Telegram account changed".to_string())
+                    } else {
+                        Ok(())
+                    }
+                })
+                .await;
+                let calls = mover
+                    .calls
+                    .into_inner()
+                    .map_err(|_| "Fixture mover lock poisoned".to_string())?;
+                Ok(json!({
+                    "moved": outcome.moved,
+                    "error": outcome.error,
+                    "calls": calls,
+                }))
+            }
             "folder_create" | "folder_delete" | "folder_rename" => {
                 // Production folder commands against a state with no Telegram
                 // client; they must fail without touching the local database.

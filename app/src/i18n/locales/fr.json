@@ -1597,5 +1597,29 @@
     "this_device": "envoyée par cet appareil",
     "other_device": "envoyée par un autre appareil",
     "none": "Aucune sauvegarde chiffrée des paramètres dans les 1,000 derniers Messages enregistrés."
+  },
+  "sort_folders": {
+    "title": "Trier par type",
+    "intro": "Les fichiers sont déplacés dans un dossier par type. Les parties des fichiers découpés restent ensemble. Vous confirmez chaque dossier avant tout déplacement.",
+    "loading": "Lecture des détails des fichiers…",
+    "details_unavailable": "Impossible de lire les détails ; les noms et dates d'envoi sont affichés à la place.",
+    "step": "Dossier {{current}} sur {{total}}",
+    "destination": "Destination : {{folder}}",
+    "destination_new": "Destination : {{folder}} (sera créé)",
+    "selected": "Sélectionnés : {{selected}} sur {{total}}",
+    "select_all": "Tout sélectionner",
+    "select_none": "Ne rien sélectionner",
+    "include": "Inclure {{name}}",
+    "original_name": "Nom d'origine : {{name}}",
+    "posted": "Publié le {{date}}",
+    "posted_by": "Publié le {{date}} par {{source}}",
+    "uploaded": "Envoyé le {{date}}",
+    "part": "Partie {{part}}",
+    "move": "Déplacer la sélection",
+    "move_failed": "Le déplacement s'est interrompu. Les fichiers déjà déplacés le restent ; réessayez pour déplacer les autres.",
+    "moving": "Déplacement…",
+    "skip": "Ignorer ce dossier",
+    "nothing": "Il n'y a rien à trier ici.",
+    "done": "Terminé. Fichiers déplacés : {{count}}."
   }
 }

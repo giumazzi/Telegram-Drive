@@ -1590,5 +1590,29 @@
     "this_device": "由此裝置上傳",
     "other_device": "由另一台裝置上傳",
     "none": "最近 1,000 則已儲存的訊息中未找到加密設定備份。"
+  },
+  "sort_folders": {
+    "title": "依類型整理",
+    "intro": "檔案會依類型移動到對應的資料夾。分割檔案的各部分會保持在一起。每個資料夾在移動前都需要你確認。",
+    "loading": "正在讀取檔案詳細資料…",
+    "details_unavailable": "無法讀取檔案詳細資料,改為顯示名稱和上傳日期。",
+    "step": "資料夾 {{current}}/{{total}}",
+    "destination": "目的地:{{folder}}",
+    "destination_new": "目的地:{{folder}}(將會建立)",
+    "selected": "已選取:{{selected}}/{{total}}",
+    "select_all": "全選",
+    "select_none": "全部取消",
+    "include": "包含 {{name}}",
+    "original_name": "原始名稱:{{name}}",
+    "posted": "發布於 {{date}}",
+    "posted_by": "{{source}} 發布於 {{date}}",
+    "uploaded": "上傳於 {{date}}",
+    "part": "第 {{part}} 部分",
+    "move": "移動所選項目",
+    "move_failed": "移動已中斷。已移動的檔案維持不變;請重試以移動其餘檔案。",
+    "moving": "正在移動…",
+    "skip": "略過此資料夾",
+    "nothing": "這裡沒有需要整理的內容。",
+    "done": "完成。已移動檔案:{{count}}"
   }
 }

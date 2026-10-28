@@ -1597,5 +1597,29 @@
     "this_device": "caricato da questo dispositivo",
     "other_device": "caricato da un altro dispositivo",
     "none": "Nessun backup cifrato delle impostazioni negli ultimi 1,000 Messaggi salvati."
+  },
+  "sort_folders": {
+    "title": "Riordina per tipo",
+    "intro": "I file vengono spostati in una cartella per ogni tipo. Le parti dei file spezzati restano insieme. Confermi ogni cartella prima che venga spostato qualcosa.",
+    "loading": "Lettura dei dettagli dei file…",
+    "details_unavailable": "Impossibile leggere i dettagli dei file; vengono mostrati nomi e date di caricamento.",
+    "step": "Cartella {{current}} di {{total}}",
+    "destination": "Destinazione: {{folder}}",
+    "destination_new": "Destinazione: {{folder}} (verrà creata)",
+    "selected": "Selezionati: {{selected}} di {{total}}",
+    "select_all": "Seleziona tutto",
+    "select_none": "Deseleziona tutto",
+    "include": "Includi {{name}}",
+    "original_name": "Nome originale: {{name}}",
+    "posted": "Pubblicato il {{date}}",
+    "posted_by": "Pubblicato il {{date}} da {{source}}",
+    "uploaded": "Caricato il {{date}}",
+    "part": "Parte {{part}}",
+    "move": "Sposta selezionati",
+    "move_failed": "Lo spostamento si è interrotto. I file già spostati restano dove sono; riprova per spostare gli altri.",
+    "moving": "Spostamento…",
+    "skip": "Salta questa cartella",
+    "nothing": "Non c'è niente da riordinare qui.",
+    "done": "Fatto. File spostati: {{count}}."
   }
 }

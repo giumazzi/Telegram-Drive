@@ -1597,5 +1597,29 @@
     "this_device": "subida por este dispositivo",
     "other_device": "subida por otro dispositivo",
     "none": "No se encontró una copia cifrada de ajustes en los últimos 1,000 Mensajes guardados."
+  },
+  "sort_folders": {
+    "title": "Ordenar por tipo",
+    "intro": "Los archivos se mueven a una carpeta por tipo. Las partes de los archivos divididos permanecen juntas. Confirmas cada carpeta antes de mover nada.",
+    "loading": "Leyendo los detalles de los archivos…",
+    "details_unavailable": "No se pudieron leer los detalles; se muestran los nombres y las fechas de subida.",
+    "step": "Carpeta {{current}} de {{total}}",
+    "destination": "Destino: {{folder}}",
+    "destination_new": "Destino: {{folder}} (se creará)",
+    "selected": "Seleccionados: {{selected}} de {{total}}",
+    "select_all": "Seleccionar todo",
+    "select_none": "No seleccionar nada",
+    "include": "Incluir {{name}}",
+    "original_name": "Nombre original: {{name}}",
+    "posted": "Publicado el {{date}}",
+    "posted_by": "Publicado el {{date}} por {{source}}",
+    "uploaded": "Subido el {{date}}",
+    "part": "Parte {{part}}",
+    "move": "Mover seleccionados",
+    "move_failed": "El traslado se detuvo. Los archivos ya movidos permanecen en su sitio; inténtalo de nuevo para mover el resto.",
+    "moving": "Moviendo…",
+    "skip": "Omitir esta carpeta",
+    "nothing": "No hay nada que ordenar aquí.",
+    "done": "Listo. Archivos movidos: {{count}}."
   }
 }

@@ -4294,34 +4294,35 @@ pub async fn cmd_move_files(
     let source_peer = resolve_peer(&client, source_folder_id, &state.peer_cache).await?;
     let target_peer = resolve_peer(&client, target_folder_id, &state.peer_cache).await?;
     account.validate()?;
-    let forwarded = client
-        .forward_messages(&target_peer, &message_ids, &source_peer)
-        .await
-        .map_err(|error| format!("Forward failed: {error}"))?;
-    verify_forwarded_messages(&message_ids, &forwarded)?;
+    let mover = crate::commands::file_moves::TelegramMover {
+        client: &client,
+        source: &source_peer,
+        target: &target_peer,
+    };
     // An account change after forwarding leaves the verified copies and original
     // files intact. It can never authorize deletion through another session.
-    account.validate()?;
-    client
-        .delete_messages(&source_peer, &message_ids)
-        .await
-        .map_err(|error| format!("Delete original failed: {error}"))?;
-    let changes = message_ids
+    let outcome =
+        crate::commands::file_moves::move_in_batches(&mover, &message_ids, || account.validate())
+            .await;
+    let changes: Vec<_> = outcome
+        .moved
         .iter()
-        .zip(forwarded.iter())
-        .filter_map(|(old, message)| {
-            message
-                .as_ref()
-                .map(|message| crate::workspace::remote_changes::Change::Move {
-                    source: source_folder_id,
-                    message: *old,
-                    target: target_folder_id,
-                    new_message: message.id(),
-                })
-        })
+        .map(
+            |(old, new_message)| crate::workspace::remote_changes::Change::Move {
+                source: source_folder_id,
+                message: *old,
+                target: target_folder_id,
+                new_message: *new_message,
+            },
+        )
         .collect();
-    if let Err(error) = crate::workspace::remote_changes::record(&account, changes).await {
-        log::warn!("Remote move succeeded but its account cache could not be updated: {error}");
+    if !changes.is_empty() {
+        if let Err(error) = crate::workspace::remote_changes::record(&account, changes).await {
+            log::warn!("Remote move succeeded but its account cache could not be updated: {error}");
+        }
+    }
+    if let Some(error) = outcome.error {
+        return Err(error);
     }
     account.validate()?;
     Ok(true)

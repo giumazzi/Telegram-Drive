@@ -1590,5 +1590,29 @@
     "this_device": "bu cihaz tarafından yüklendi",
     "other_device": "başka bir cihaz tarafından yüklendi",
     "none": "Son 1,000 Kayıtlı Mesaj içinde şifreli ayar yedeği bulunamadı."
+  },
+  "sort_folders": {
+    "title": "Türe göre sırala",
+    "intro": "Dosyalar her tür için bir klasöre taşınır. Bölünmüş dosyaların parçaları bir arada kalır. Herhangi bir şey taşınmadan önce her klasörü onaylarsınız.",
+    "loading": "Dosya ayrıntıları okunuyor…",
+    "details_unavailable": "Dosya ayrıntıları okunamadı; bunun yerine adlar ve yükleme tarihleri gösteriliyor.",
+    "step": "Klasör {{current}} / {{total}}",
+    "destination": "Hedef: {{folder}}",
+    "destination_new": "Hedef: {{folder}} (oluşturulacak)",
+    "selected": "Seçilen: {{selected}} / {{total}}",
+    "select_all": "Tümünü seç",
+    "select_none": "Hiçbirini seçme",
+    "include": "{{name}} dahil et",
+    "original_name": "Özgün ad: {{name}}",
+    "posted": "{{date}} tarihinde paylaşıldı",
+    "posted_by": "{{date}} tarihinde {{source}} tarafından paylaşıldı",
+    "uploaded": "{{date}} tarihinde yüklendi",
+    "part": "Parça {{part}}",
+    "move": "Seçilenleri taşı",
+    "move_failed": "Taşıma durdu. Zaten taşınan dosyalar yerinde kalır; kalanları taşımak için yeniden deneyin.",
+    "moving": "Taşınıyor…",
+    "skip": "Bu klasörü atla",
+    "nothing": "Burada sıralanacak bir şey yok.",
+    "done": "Tamamlandı. Taşınan dosyalar: {{count}}."
   }
 }

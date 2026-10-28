@@ -18,6 +18,8 @@ export function useTelegramConnection(onLogoutParent: () => void) {
     const { t } = useTranslation();
 
     const [folders, setFolders] = useState<TelegramFolder[]>([]);
+    const foldersRef = useRef(folders);
+    foldersRef.current = folders;
     const [groups, setGroups] = useState<FolderGroup[]>([]);
     const [activeFolderId, setActiveFolderId] = useState<number | null>(null);
     const [store, setStore] = useState<Store | null>(null);
@@ -265,15 +267,18 @@ export function useTelegramConnection(onLogoutParent: () => void) {
     // Keep the ref in sync
     handleSyncFoldersRef.current = handleSyncFolders;
 
-    const handleCreateFolder = async (name: string) => {
-        if (!store) return;
+    const handleCreateFolder = async (name: string): Promise<TelegramFolder | undefined> => {
+        if (!store) return undefined;
         try {
             const newFolder = await invoke<TelegramFolder>('cmd_create_folder', { name });
-            const updated = [...folders, newFolder];
+            // Several folders can be created before this render's list updates.
+            const updated = [...foldersRef.current, newFolder];
+            foldersRef.current = updated;
             setFolders(updated);
             await store.set('folders', updated);
             await store.save();
             toast.success(`Folder "${name}" created.`);
+            return newFolder;
         } catch (e) {
             toast.error(userFacingError(e, t));
             throw e;
