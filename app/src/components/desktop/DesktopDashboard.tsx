@@ -36,7 +36,6 @@ import { RenameFolderModal } from './dashboard/RenameFolderModal';
 import { RenameFileModal } from './dashboard/RenameFileModal';
 import { DesktopAdBanner } from './dashboard/DesktopAdBanner';
 import { RemoteUploadModal } from './dashboard/RemoteUploadModal';
-import { SortIntoFoldersDialog } from './dashboard/SortIntoFoldersDialog';
 import { KeyboardShortcutsDialog } from './dashboard/KeyboardShortcutsDialog';
 import { DriveConceptTour } from './dashboard/DriveConceptTour';
 import { LazyFeatureBoundary } from '../shared/LazyFeatureBoundary';
@@ -68,6 +67,7 @@ const LazyMediaPlayer = lazy(() => import('./dashboard/MediaPlayer').then((modul
 const LazyPdfViewer = lazy(() => import('./dashboard/PdfViewer').then((module) => ({ default: module.PdfViewer })));
 const LazyArchiveViewerModal = lazy(() => import('./dashboard/ArchiveViewerModal').then((module) => ({ default: module.ArchiveViewerModal })));
 const LazySettingsModal = lazy(() => import('./dashboard/SettingsModal').then((module) => ({ default: module.SettingsModal })));
+const LazySortIntoFoldersDialog = lazy(() => import('./dashboard/SortIntoFoldersDialog').then(module => ({ default: module.SortIntoFoldersDialog })));
 const SupporterOfferDialog = lazy(() => import('../shared/SupporterOfferDialog').then(module => ({ default: module.SupporterOfferDialog })));
 const LazyHelpCenterDialog = lazy(() => import('./dashboard/HelpCenterDialog').then((module) => ({ default: module.HelpCenterDialog })));
 const LazyWorkspaceHub = lazy(() => import('../workspace/WorkspaceHub').then(module => ({ default: module.WorkspaceHub })));
@@ -801,16 +801,17 @@ export function Dashboard({ onLogout }: { onLogout: () => void }) {
 
             <AnimatePresence>
                 {showSortDialog && sortRequest && (
-                    <SortIntoFoldersDialog
-                        key={`sort:${sortRequest.ownerId}:${sortRequest.folderId ?? 'home'}`}
-                        ownerId={sortRequest.ownerId}
-                        sourceFolderId={sortRequest.folderId}
-                        files={sortRequest.files}
-                        folders={folders}
-                        onCreateFolder={handleCreateFolder}
-                        onMove={(files, targetFolderId) => handleMoveFiles(files, targetFolderId)}
-                        onClose={() => setSortRequest(null)}
-                    />
+                    <LazyFeatureBoundary key={`sort:${sortRequest.ownerId}:${sortRequest.folderId ?? 'home'}`}>
+                        <LazySortIntoFoldersDialog
+                            ownerId={sortRequest.ownerId}
+                            sourceFolderId={sortRequest.folderId}
+                            files={sortRequest.files}
+                            folders={folders}
+                            onCreateFolder={handleCreateFolder}
+                            onMove={(files, targetFolderId) => handleMoveFiles(files, targetFolderId)}
+                            onClose={() => setSortRequest(null)}
+                        />
+                    </LazyFeatureBoundary>
                 )}
                 {showMoveModal && moveRequest && (
                     <MoveToFolderModal
