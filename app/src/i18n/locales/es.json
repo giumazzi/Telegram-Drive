@@ -1623,7 +1623,9 @@
     "done": "Listo. Archivos movidos: {{count}}.",
     "split_title": "Agrupar archivos divididos",
     "split_intro": "Cada serie de partes se mueve a su propia carpeta, con el nombre del archivo completo. Confirmas cada carpeta antes de mover nada.",
-    "split_nothing": "No se encontraron archivos divididos aquí."
+    "split_nothing": "No se encontraron archivos divididos aquí.",
+    "archive_badge": "Archivo comprimido",
+    "archive_contains": "Contiene {{name}} · archivos: {{count}}"
   },
   "split_files": {
     "parts": "Partes: {{count}}",

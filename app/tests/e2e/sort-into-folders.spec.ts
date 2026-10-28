@@ -168,3 +168,58 @@ test('grouping reports when a folder has no split files', async ({ page }) => {
   await expect(page.getByRole('dialog').getByText('No split files were found here.', { exact: true })).toBeVisible();
   expect(await nativeCalls(page, 'cmd_move_files')).toHaveLength(0);
 });
+
+test('archives are sorted by what they contain and stay archives when mixed or unreadable', async ({ page }) => {
+  const MB = 1024 * 1024;
+  const archive = (id: number, name: string) => ({ id, name, file_ext: name.split('.').pop(), size: MB, mime_type: 'application/octet-stream', type: 'file' });
+  await desktopFixture(page, {
+    savedFiles: [
+      archive(402, 'Atto_1.7z.002'),
+      archive(401, 'Atto_1.7z.001'),
+      archive(410, 'photos.zip'),
+      archive(420, 'mixed.7z'),
+      archive(430, 'locked.7z'),
+      archive(440, 'old.part1.rar'),
+      { id: 450, name: 'clip.mp4', file_ext: 'mp4', size: MB, mime_type: 'video/mp4', type: 'file' },
+    ],
+    archiveContents: {
+      'Atto_1.7z': { entries: [{ name: 'Atto_1/Atto_1.mp4', size: 1900 * MB }, { name: 'Atto_1/copertina.jpg', size: MB }] },
+      'photos.zip': { entries: [{ name: 'a.jpg', size: 3 * MB }, { name: 'b.png', size: 2 * MB }] },
+      'mixed.7z': { entries: [{ name: 'talk.mp4', size: 40 * MB }, { name: 'slides.pdf', size: 35 * MB }, { name: 'tool.exe', size: 25 * MB }] },
+    },
+  });
+  const dialog = await openSorter(page, 'clip.mp4');
+
+  await expect.poll(async () => (await nativeCalls(page, 'cmd_inspect_archives')).length).toBeGreaterThan(0);
+  const requested = (await nativeCalls(page, 'cmd_inspect_archives')).at(-1)!.args.archives;
+  expect(requested).toEqual([
+    { key: 'file:410', name: 'photos.zip', messageIds: [410] },
+    { key: 'file:420', name: 'mixed.7z', messageIds: [420] },
+    { key: 'file:430', name: 'locked.7z', messageIds: [430] },
+    { key: 'split:atto_1.7z', name: 'Atto_1.7z', messageIds: [401, 402] },
+  ]);
+
+  // A split archive of a video goes to Videos, marked as an archive.
+  await expect(dialog.getByText('Destination: Videos (it will be created)', { exact: true })).toBeVisible();
+  const videos = dialog.getByRole('listitem');
+  await expect(videos).toHaveCount(3);
+  await expect(videos.nth(0)).toContainText('Atto_1.7z.001');
+  await expect(videos.nth(0)).toContainText('Archive');
+  await expect(videos.nth(0)).toContainText('Contains Atto_1.mp4 · files: 2');
+  await expect(videos.nth(1)).toContainText('Atto_1.7z.002');
+  await expect(videos.nth(2)).toContainText('clip.mp4');
+  await expect(videos.nth(2)).not.toContainText('Archive');
+  await dialog.getByRole('button', { name: 'Skip this folder', exact: true }).click();
+
+  await expect(dialog.getByText('Destination: Images (it will be created)', { exact: true })).toBeVisible();
+  await expect(dialog.getByRole('listitem')).toHaveCount(1);
+  await expect(dialog.getByRole('listitem')).toContainText('photos.zip');
+  await dialog.getByRole('button', { name: 'Skip this folder', exact: true }).click();
+
+  // Mixed contents, an unreadable index and RAR volumes remain archives.
+  await expect(dialog.getByText('Destination: Archives (it will be created)', { exact: true })).toBeVisible();
+  const archives = dialog.getByRole('listitem');
+  await expect(archives).toHaveCount(3);
+  for (const name of ['locked.7z', 'mixed.7z', 'old.part1.rar']) await expect(dialog.getByText(name, { exact: true })).toBeVisible();
+  await expect(archives.filter({ hasText: 'Contains' })).toHaveCount(0);
+});

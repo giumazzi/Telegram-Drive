@@ -51,6 +51,7 @@ pub struct TelegramState {
 
 pub mod api_settings;
 pub mod archive;
+pub mod archive_index;
 pub mod auth;
 pub mod crash_reporting;
 pub mod download_destination;

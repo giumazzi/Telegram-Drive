@@ -1616,7 +1616,9 @@
     "done": "Selesai. File dipindahkan: {{count}}.",
     "split_title": "Kelompokkan file yang dipecah",
     "split_intro": "Setiap rangkaian bagian dipindahkan ke foldernya sendiri, dinamai sesuai file utuhnya. Anda mengonfirmasi setiap folder sebelum ada yang dipindahkan.",
-    "split_nothing": "Tidak ada file yang dipecah di sini."
+    "split_nothing": "Tidak ada file yang dipecah di sini.",
+    "archive_badge": "Arsip",
+    "archive_contains": "Berisi {{name}} · file: {{count}}"
   },
   "split_files": {
     "parts": "Bagian: {{count}}",

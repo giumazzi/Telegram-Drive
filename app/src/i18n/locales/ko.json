@@ -1616,7 +1616,9 @@
     "done": "완료. 이동한 파일: {{count}}",
     "split_title": "분할 파일 묶기",
     "split_intro": "각 조각 묶음이 전체 파일 이름의 폴더로 이동됩니다. 이동하기 전에 폴더마다 확인합니다.",
-    "split_nothing": "여기에는 분할 파일이 없습니다."
+    "split_nothing": "여기에는 분할 파일이 없습니다.",
+    "archive_badge": "압축 파일",
+    "archive_contains": "{{name}} 포함 · 파일 수: {{count}}"
   },
   "split_files": {
     "parts": "조각 수: {{count}}",

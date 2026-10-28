@@ -1616,7 +1616,9 @@
     "done": "Fertig. Verschobene Dateien: {{count}}.",
     "split_title": "Geteilte Dateien gruppieren",
     "split_intro": "Jede Teilserie wird in einen eigenen Ordner mit dem Namen der ganzen Datei verschoben. Du bestätigst jeden Ordner, bevor etwas verschoben wird.",
-    "split_nothing": "Hier wurden keine geteilten Dateien gefunden."
+    "split_nothing": "Hier wurden keine geteilten Dateien gefunden.",
+    "archive_badge": "Archiv",
+    "archive_contains": "Enthält {{name}} · Dateien: {{count}}"
   },
   "split_files": {
     "parts": "Teile: {{count}}",

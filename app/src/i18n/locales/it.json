@@ -1623,7 +1623,9 @@
     "done": "Fatto. File spostati: {{count}}.",
     "split_title": "Raggruppa file spezzati",
     "split_intro": "Ogni serie di parti viene spostata in una cartella propria, con il nome del file intero. Confermi ogni cartella prima che venga spostato qualcosa.",
-    "split_nothing": "Qui non ci sono file spezzati."
+    "split_nothing": "Qui non ci sono file spezzati.",
+    "archive_badge": "Archivio",
+    "archive_contains": "Contiene {{name}} · file: {{count}}"
   },
   "split_files": {
     "parts": "Parti: {{count}}",

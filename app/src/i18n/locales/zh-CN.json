@@ -1616,7 +1616,9 @@
     "done": "完成。已移动文件:{{count}}",
     "split_title": "归类分卷文件",
     "split_intro": "每组分卷会移动到以完整文件命名的单独文件夹。每个文件夹在移动前都需要你确认。",
-    "split_nothing": "这里没有分卷文件。"
+    "split_nothing": "这里没有分卷文件。",
+    "archive_badge": "压缩包",
+    "archive_contains": "包含 {{name}} · 文件数:{{count}}"
   },
   "split_files": {
     "parts": "分卷数:{{count}}",

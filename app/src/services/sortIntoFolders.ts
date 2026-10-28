@@ -80,11 +80,16 @@ export interface SortStep {
  * One step per category that has files. Parts of the same split file sit
  * next to each other, in part order, so they are reviewed and moved together.
  */
-export function planSortSteps(files: readonly TelegramFile[], origins: ReadonlyMap<number, FileOrigin>): SortStep[] {
+export function planSortSteps(
+  files: readonly TelegramFile[],
+  origins: ReadonlyMap<number, FileOrigin>,
+  /** Categories decided from an archive's contents, by message id of each part. */
+  overrides: ReadonlyMap<number, SortCategory> = new Map(),
+): SortStep[] {
   const byCategory = new Map<SortCategory, TelegramFile[]>();
   for (const file of files) {
     if (file.type === 'folder') continue;
-    const category = sortCategory(file, origins.get(file.id));
+    const category = overrides.get(file.id) ?? sortCategory(file, origins.get(file.id));
     byCategory.set(category, [...(byCategory.get(category) ?? []), file]);
   }
   const order = (file: TelegramFile) => {
@@ -153,4 +158,64 @@ export function planSplitSteps(files: readonly TelegramFile[], origins: Readonly
       base: set.base,
       files: [...set.parts].sort((left, right) => left.part - right.part).map(entry => entry.file),
     }));
+}
+
+/** What an archive holds, as reported by cmd_inspect_archives. */
+export interface ArchiveContents {
+  key: string;
+  readable: boolean;
+  entries: Array<{ name: string; size: number }>;
+  totalEntries: number;
+}
+
+export interface ArchiveCandidate {
+  key: string;
+  /** The whole archive's name: `film.7z` for `film.7z.001`. */
+  name: string;
+  files: TelegramFile[];
+}
+
+/** 7z and ZIP archives, whole or as complete `.001`… parts, that can be inspected. */
+export function archiveCandidates(files: readonly TelegramFile[], origins: ReadonlyMap<number, FileOrigin>): ArchiveCandidate[] {
+  const isInspectable = (name: string) => /\.(7z|zip)$/i.test(name);
+  const sets = new Map<string, ArchiveCandidate & { parts: number[] }>();
+  const candidates: ArchiveCandidate[] = [];
+  for (const file of files) {
+    if (file.type === 'folder' || (file.encryption_state ?? 'plain') !== 'plain') continue;
+    const name = identifyingName(file, origins.get(file.id));
+    const raw = name.match(/^(.+)\.(\d{3})$/);
+    if (raw && isInspectable(raw[1])) {
+      const key = raw[1].toLocaleLowerCase();
+      const set = sets.get(key) ?? { key: `split:${key}`, name: raw[1], files: [], parts: [] };
+      set.files.push(file);
+      set.parts.push(Number(raw[2]));
+      sets.set(key, set);
+    } else if (!raw && isInspectable(name)) {
+      candidates.push({ key: `file:${file.id}`, name, files: [file] });
+    }
+  }
+  for (const set of sets.values()) {
+    const order = set.parts.map((part, index) => ({ part, file: set.files[index] })).sort((left, right) => left.part - right.part);
+    // Only a complete set reads as one archive.
+    if (!order.every((entry, index) => entry.part === index + 1)) continue;
+    candidates.push({ key: set.key, name: set.name, files: order.map(entry => entry.file) });
+  }
+  return candidates;
+}
+
+/**
+ * The type of an archive's contents: the category holding most of its bytes,
+ * when that is at least half of them. Mixed or unknown contents stay archives.
+ */
+export function archiveContentCategory(contents: ArchiveContents): SortCategory | null {
+  if (!contents.readable || contents.entries.length === 0) return null;
+  const bytes = new Map<SortCategory, number>();
+  let total = 0;
+  for (const entry of contents.entries) {
+    const category = classifyFileExtension(extensionOf(entry.name.split('/').pop() ?? entry.name));
+    bytes.set(category, (bytes.get(category) ?? 0) + entry.size);
+    total += entry.size;
+  }
+  const [category, size] = [...bytes.entries()].sort((left, right) => right[1] - left[1])[0];
+  return category !== 'other' && category !== 'archive' && total > 0 && size * 2 >= total ? category : null;
 }

@@ -1616,7 +1616,9 @@
     "done": "Tamamlandı. Taşınan dosyalar: {{count}}.",
     "split_title": "Bölünmüş dosyaları grupla",
     "split_intro": "Her parça seti, tüm dosyanın adını taşıyan kendi klasörüne taşınır. Herhangi bir şey taşınmadan önce her klasörü onaylarsınız.",
-    "split_nothing": "Burada bölünmüş dosya bulunamadı."
+    "split_nothing": "Burada bölünmüş dosya bulunamadı.",
+    "archive_badge": "Arşiv",
+    "archive_contains": "İçerik: {{name}} · dosya: {{count}}"
   },
   "split_files": {
     "parts": "Parça: {{count}}",

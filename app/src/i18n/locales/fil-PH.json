@@ -1616,7 +1616,9 @@
     "done": "Tapos na. Mga nailipat na file: {{count}}.",
     "split_title": "Pagsamahin ang mga hinating file",
     "split_intro": "Inililipat ang bawat hanay ng mga bahagi sa sarili nitong folder, na ipinangalan sa buong file. Kinukumpirma mo ang bawat folder bago may mailipat.",
-    "split_nothing": "Walang hinating file dito."
+    "split_nothing": "Walang hinating file dito.",
+    "archive_badge": "Arkibo",
+    "archive_contains": "Naglalaman ng {{name}} · mga file: {{count}}"
   },
   "split_files": {
     "parts": "Mga bahagi: {{count}}",

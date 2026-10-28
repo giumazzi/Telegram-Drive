@@ -8,12 +8,16 @@ import { useModalFocus } from '../../../hooks/useModalFocus';
 import { Button } from '../../ui';
 import { formatBytes } from '../../../utils';
 import {
+  archiveCandidates,
+  archiveContentCategory,
   identifyingName,
   planSortSteps,
   planSplitSteps,
   splitFolderName,
   splitPart,
+  type ArchiveContents,
   type FileOrigin,
+  type SortCategory,
 } from '../../../services/sortIntoFolders';
 
 /** `type`: one folder per kind of file. `split`: one folder per split file. */
@@ -24,14 +28,22 @@ interface FolderStep {
   files: TelegramFile[];
 }
 
-function planSteps(mode: SortMode, files: readonly TelegramFile[], origins: ReadonlyMap<number, FileOrigin>, t: TFunction): FolderStep[] {
+function planSteps(
+  mode: SortMode,
+  files: readonly TelegramFile[],
+  origins: ReadonlyMap<number, FileOrigin>,
+  overrides: ReadonlyMap<number, SortCategory>,
+  t: TFunction,
+): FolderStep[] {
   return mode === 'type'
-    ? planSortSteps(files, origins).map(step => ({ destination: t(`workspace.types.${step.category}`), files: step.files }))
+    ? planSortSteps(files, origins, overrides).map(step => ({ destination: t(`workspace.types.${step.category}`), files: step.files }))
     : planSplitSteps(files, origins).map(step => ({ destination: splitFolderName(step.base), files: step.files }));
 }
 
 /** cmd_get_file_origins accepts at most this many ids per call. */
 const ORIGIN_PAGE = 5_000;
+/** cmd_inspect_archives accepts at most this many archives per call. */
+const ARCHIVE_PAGE = 500;
 /**
  * Moves are sent in Telegram-sized batches. A failed batch moves none of its
  * files, so the dialog always knows which files are still to be moved.
@@ -67,6 +79,8 @@ export function SortIntoFoldersDialog({ mode, ownerId, sourceFolderId, files, fo
   const panelRef = useRef<HTMLDivElement>(null);
   useModalFocus(panelRef, onClose);
   const [origins, setOrigins] = useState<Map<number, FileOrigin> | null>(null);
+  // What each inspected archive holds, by message id of each of its parts.
+  const [archiveContents, setArchiveContents] = useState<Map<number, { contents: ArchiveContents; category: SortCategory }>>(new Map());
   const [detailsUnavailable, setDetailsUnavailable] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [excluded, setExcluded] = useState<Set<number>>(new Set());
@@ -94,19 +108,46 @@ export function SortIntoFoldersDialog({ mode, ownerId, sourceFolderId, files, fo
       } catch {
         if (!cancelled) setDetailsUnavailable(true);
       }
-      if (!cancelled) setOrigins(found);
+      // Archives are sorted by what they hold, when their index can be read.
+      const inspected = new Map<number, { contents: ArchiveContents; category: SortCategory }>();
+      if (mode === 'type') {
+        const candidates = archiveCandidates(snapshot, found);
+        try {
+          for (let start = 0; start < candidates.length && !cancelled; start += ARCHIVE_PAGE) {
+            const page = candidates.slice(start, start + ARCHIVE_PAGE);
+            const results = await invoke<ArchiveContents[]>('cmd_inspect_archives', {
+              ownerId,
+              folderId: sourceFolderId,
+              archives: page.map(candidate => ({ key: candidate.key, name: candidate.name, messageIds: candidate.files.map(file => file.id) })),
+            });
+            for (const contents of results) {
+              const candidate = page.find(item => item.key === contents.key);
+              const category = archiveContentCategory(contents);
+              if (!candidate || !category) continue;
+              for (const file of candidate.files) inspected.set(file.id, { contents, category });
+            }
+          }
+        } catch {
+          // Unread archives simply stay with the other archives.
+        }
+      }
+      if (!cancelled) {
+        setArchiveContents(inspected);
+        setOrigins(found);
+      }
     })();
     return () => { cancelled = true; };
-  }, [ownerId, snapshot, sourceFolderId]);
+  }, [mode, ownerId, snapshot, sourceFolderId]);
 
   const steps = useMemo<FolderStep[]>(() => {
     if (!origins) return [];
     // Files already in their destination folder are sorted.
-    return planSteps(mode, snapshot, origins, t).filter(step => {
+    const overrides = new Map([...archiveContents].map(([id, inspected]) => [id, inspected.category]));
+    return planSteps(mode, snapshot, origins, overrides, t).filter(step => {
       const existing = folders.find(folder => sameName(folder, step.destination));
       return !existing || existing.id !== sourceFolderId;
     });
-  }, [mode, origins, snapshot, folders, sourceFolderId, t]);
+  }, [mode, origins, archiveContents, snapshot, folders, sourceFolderId, t]);
 
   const step = steps[stepIndex];
   const finished = origins !== null && stepIndex >= steps.length;
@@ -158,6 +199,11 @@ export function SortIntoFoldersDialog({ mode, ownerId, sourceFolderId, files, fo
     const origin = origins?.get(file.id);
     const name = identifyingName(file, origin);
     const lines: string[] = [];
+    const inspected = archiveContents.get(file.id);
+    if (inspected) {
+      const [first] = inspected.contents.entries;
+      lines.push(t('sort_folders.archive_contains', { name: first.name.split('/').pop(), count: inspected.contents.totalEntries }));
+    }
     if (origin?.originalName && origin.originalName !== file.name) lines.push(t('sort_folders.original_name', { name: origin.originalName }));
     if (origin?.caption && origin.caption !== file.name) lines.push(origin.caption);
     const posted = formatDate(origin?.originalDate, i18n.language);
@@ -169,7 +215,7 @@ export function SortIntoFoldersDialog({ mode, ownerId, sourceFolderId, files, fo
       const uploaded = formatDate(file.created_at, i18n.language);
       if (uploaded) lines.push(t('sort_folders.uploaded', { date: uploaded }));
     }
-    return { part: splitPart(name)?.part, lines };
+    return { part: splitPart(name)?.part, archive: Boolean(inspected), lines };
   };
 
   return (
@@ -207,7 +253,7 @@ export function SortIntoFoldersDialog({ mode, ownerId, sourceFolderId, files, fo
             </div>
             <ul className="flex-1 overflow-y-auto" aria-label={destination}>
               {stepFiles.map(file => {
-                const { part, lines } = describe(file);
+                const { part, archive, lines } = describe(file);
                 return (
                   <li key={file.id} className="border-b border-app-border-subtle px-4 py-2.5 last:border-b-0">
                     <label className="flex cursor-pointer items-start gap-3">
@@ -215,6 +261,7 @@ export function SortIntoFoldersDialog({ mode, ownerId, sourceFolderId, files, fo
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2">
                           <span className="truncate text-sm text-app-text" title={file.name}>{file.name}</span>
+                          {archive && <span className="shrink-0 rounded-full bg-app-warning/15 px-2 text-badge text-app-warning">{t('sort_folders.archive_badge')}</span>}
                           {part !== undefined && <span className="shrink-0 rounded-full bg-app-selected px-2 text-badge text-app-accent">{t('sort_folders.part', { part })}</span>}
                         </span>
                         {lines.map(line => <span key={line} className="block truncate text-metadata text-app-text-secondary" title={line}>{line}</span>)}

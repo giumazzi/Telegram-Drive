@@ -1616,7 +1616,9 @@
     "done": "Selesai. Fail dipindahkan: {{count}}.",
     "split_title": "Kumpulkan fail yang dipecahkan",
     "split_intro": "Setiap set bahagian dipindahkan ke foldernya sendiri, dinamakan mengikut fail penuh. Anda mengesahkan setiap folder sebelum apa-apa dipindahkan.",
-    "split_nothing": "Tiada fail yang dipecahkan di sini."
+    "split_nothing": "Tiada fail yang dipecahkan di sini.",
+    "archive_badge": "Arkib",
+    "archive_contains": "Mengandungi {{name}} · fail: {{count}}"
   },
   "split_files": {
     "parts": "Bahagian: {{count}}",

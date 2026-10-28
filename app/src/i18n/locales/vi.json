@@ -1616,7 +1616,9 @@
     "done": "Xong. Số tệp đã di chuyển: {{count}}.",
     "split_title": "Nhóm các tệp bị chia nhỏ",
     "split_intro": "Mỗi bộ phần được chuyển vào thư mục riêng, đặt theo tên tệp đầy đủ. Bạn xác nhận từng thư mục trước khi di chuyển.",
-    "split_nothing": "Không có tệp bị chia nhỏ nào ở đây."
+    "split_nothing": "Không có tệp bị chia nhỏ nào ở đây.",
+    "archive_badge": "Tệp nén",
+    "archive_contains": "Chứa {{name}} · số tệp: {{count}}"
   },
   "split_files": {
     "parts": "Số phần: {{count}}",

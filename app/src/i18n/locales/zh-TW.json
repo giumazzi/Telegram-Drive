@@ -1616,7 +1616,9 @@
     "done": "完成。已移動檔案:{{count}}",
     "split_title": "歸類分割檔案",
     "split_intro": "每組分割檔案會移動到以完整檔名命名的獨立資料夾。每個資料夾在移動前都需要你確認。",
-    "split_nothing": "這裡沒有分割檔案。"
+    "split_nothing": "這裡沒有分割檔案。",
+    "archive_badge": "壓縮檔",
+    "archive_contains": "包含 {{name}} · 檔案數:{{count}}"
   },
   "split_files": {
     "parts": "分割數:{{count}}",

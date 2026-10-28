@@ -1623,7 +1623,9 @@
     "done": "Terminé. Fichiers déplacés : {{count}}.",
     "split_title": "Regrouper les fichiers découpés",
     "split_intro": "Chaque série de parties est déplacée dans son propre dossier, nommé d'après le fichier complet. Vous confirmez chaque dossier avant tout déplacement.",
-    "split_nothing": "Aucun fichier découpé ici."
+    "split_nothing": "Aucun fichier découpé ici.",
+    "archive_badge": "Archive compressée",
+    "archive_contains": "Contient {{name}} · fichiers : {{count}}"
   },
   "split_files": {
     "parts": "Parties : {{count}}",

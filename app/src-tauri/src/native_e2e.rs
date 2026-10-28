@@ -250,6 +250,37 @@ fn fixture_tl_message(spec: &Value) -> grammers_tl_types::enums::Message {
     })
 }
 
+/// Archive parts on disk standing in for Telegram range downloads.
+struct FixtureRanges {
+    parts: Vec<PathBuf>,
+}
+
+impl crate::commands::archive_index::RangeSource for FixtureRanges {
+    fn block(&self, part: usize, index: u64) -> Result<Vec<u8>, String> {
+        use std::io::{Read, Seek, SeekFrom};
+        let block = crate::commands::archive_index::RANGE_BLOCK;
+        let mut file =
+            std::fs::File::open(self.parts.get(part).ok_or("Unknown part")?).map_err(error)?;
+        file.seek(SeekFrom::Start(index * block)).map_err(error)?;
+        let mut bytes = Vec::new();
+        file.take(block).read_to_end(&mut bytes).map_err(error)?;
+        Ok(bytes)
+    }
+}
+
+/// Deterministic incompressible bytes, so an archive keeps its real size.
+fn fixture_noise(length: usize, seed: u64) -> Vec<u8> {
+    let mut state = seed | 1;
+    (0..length)
+        .map(|_| {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            state as u8
+        })
+        .collect()
+}
+
 struct FixtureProxySecret(PathBuf);
 impl crate::vpn_optimizer::ProxySecretStore for FixtureProxySecret {
     fn read(&self) -> Result<Option<String>, String> {
@@ -1466,6 +1497,8 @@ impl Driver {
             | "upload_session"
             | "upload_assemble"
             | "publish_download"
+            | "archive_index_fixture"
+            | "archive_index"
             | "split_join"
             | "save_transfer"
             | "transfers"
@@ -4964,6 +4997,90 @@ impl Driver {
                 )
                 .await?;
                 serde_json::to_value(result).map_err(error)
+            }
+            "archive_index_fixture" => {
+                // A real 7z or ZIP archive, cut into byte-slice parts on disk.
+                use std::io::Write;
+                let name = text(&request, "name")?;
+                let entries: Vec<(String, Vec<u8>)> = request["entries"]
+                    .as_array()
+                    .ok_or("Missing entries")?
+                    .iter()
+                    .enumerate()
+                    .map(|(index, entry)| {
+                        let length = entry["bytes"].as_u64().unwrap_or_default() as usize;
+                        (
+                            entry["name"].as_str().unwrap_or_default().to_string(),
+                            fixture_noise(length, index as u64 + 7),
+                        )
+                    })
+                    .collect();
+                let mut cursor = std::io::Cursor::new(Vec::new());
+                if text(&request, "kind")? == "7z" {
+                    let mut writer = sevenz_rust2::SevenZWriter::new(&mut cursor).map_err(error)?;
+                    for (entry_name, bytes) in &entries {
+                        writer
+                            .push_archive_entry(
+                                sevenz_rust2::SevenZArchiveEntry::new_file(entry_name),
+                                Some(bytes.as_slice()),
+                            )
+                            .map_err(error)?;
+                    }
+                    writer.finish().map_err(error)?;
+                } else {
+                    let mut writer = zip::ZipWriter::new(&mut cursor);
+                    let options = zip::write::SimpleFileOptions::default()
+                        .compression_method(zip::CompressionMethod::Stored);
+                    for (entry_name, bytes) in &entries {
+                        writer
+                            .start_file(entry_name.as_str(), options)
+                            .map_err(error)?;
+                        writer.write_all(bytes).map_err(error)?;
+                    }
+                    writer.finish().map_err(error)?;
+                }
+                let archive = cursor.into_inner();
+                let parts = request["parts"].as_u64().unwrap_or(1).max(1) as usize;
+                let part_size = archive.len().div_ceil(parts);
+                let mut names = Vec::new();
+                for (index, chunk) in archive.chunks(part_size).enumerate() {
+                    let part_name = if parts == 1 {
+                        name.to_string()
+                    } else {
+                        format!("{name}.{:03}", index + 1)
+                    };
+                    std::fs::write(child(&self.root, &part_name)?, chunk).map_err(error)?;
+                    names.push(part_name);
+                }
+                Ok(json!({"size": archive.len(), "parts": names}))
+            }
+            "archive_index" => {
+                let parts = request["parts"]
+                    .as_array()
+                    .ok_or("Missing parts")?
+                    .iter()
+                    .map(|part| child(&self.root, part.as_str().unwrap_or_default()))
+                    .collect::<Result<Vec<_>, _>>()?;
+                let sizes = parts
+                    .iter()
+                    .map(|part| std::fs::metadata(part).map(|metadata| metadata.len()))
+                    .collect::<Result<Vec<_>, _>>()
+                    .map_err(error)?;
+                let source = FixtureRanges { parts };
+                let kind = crate::commands::archive_index::ArchiveKind::of(text(&request, "name")?);
+                let fetched = kind
+                    .and_then(|kind| {
+                        crate::commands::archive_index::list_archive(&source, sizes.clone(), kind)
+                            .ok()
+                    })
+                    .map(|(_, fetched)| fetched);
+                let contents = crate::commands::archive_index::describe_archive(
+                    "fixture".into(),
+                    &source,
+                    sizes,
+                    kind,
+                );
+                Ok(json!({"contents": contents, "fetched": fetched}))
             }
             "split_join" => {
                 // Parts are trusted only as this account's saved downloads,

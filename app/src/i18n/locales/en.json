@@ -1616,7 +1616,9 @@
     "done": "Done. Files moved: {{count}}.",
     "split_title": "Group split files",
     "split_intro": "Each set of parts moves into its own folder, named after the whole file. You confirm each folder before anything moves.",
-    "split_nothing": "No split files were found here."
+    "split_nothing": "No split files were found here.",
+    "archive_badge": "Archive",
+    "archive_contains": "Contains {{name}} · files: {{count}}"
   },
   "split_files": {
     "parts": "Parts: {{count}}",

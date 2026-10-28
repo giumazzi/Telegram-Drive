@@ -859,6 +859,97 @@ async fn real_http_server_streams_owned_cache_and_revokes_it_after_account_switc
     );
 }
 
+// Sorting needs to know what an archive holds. Real 7z and ZIP archives are
+// read through the production range reader; files on disk replace Telegram's
+// range downloads, and only a small fraction of each archive may be fetched.
+#[test]
+fn archive_indexes_are_read_from_ranges_without_downloading_contents() {
+    let fixture = Fixture::new();
+    let mut app = Backend::start(&fixture.0);
+    let build = |app: &mut Backend, kind: &str, name: &str, entries: Value, parts: u64| {
+        app.ok(json!({"command":"archive_index_fixture","kind":kind,"name":name,"entries":entries,"parts":parts}))
+    };
+
+    let video_7z = build(
+        &mut app,
+        "7z",
+        "Atto_1.7z",
+        json!([{"name":"Atto_1/copertina.jpg","bytes":20_000},{"name":"Atto_1/Atto_1.mp4","bytes":3_000_000}]),
+        3,
+    );
+    assert_eq!(
+        video_7z["parts"],
+        json!(["Atto_1.7z.001", "Atto_1.7z.002", "Atto_1.7z.003"])
+    );
+    let listed =
+        app.ok(json!({"command":"archive_index","name":"Atto_1.7z","parts":video_7z["parts"]}));
+    assert_eq!(listed["contents"]["readable"], true, "{listed}");
+    assert_eq!(
+        listed["contents"]["entries"],
+        json!([{"name":"Atto_1/Atto_1.mp4","size":3_000_000},{"name":"Atto_1/copertina.jpg","size":20_000}])
+    );
+    assert_eq!(listed["contents"]["totalEntries"], 2);
+    let archive_size = video_7z["size"].as_u64().unwrap();
+    let fetched = listed["fetched"].as_u64().unwrap();
+    assert!(
+        fetched * 10 < archive_size,
+        "fetched {fetched} of {archive_size} bytes"
+    );
+
+    let zip_whole = build(
+        &mut app,
+        "zip",
+        "mixed.zip",
+        json!([{"name":"notes.pdf","bytes":50_000},{"name":"clip.mkv","bytes":2_000_000}]),
+        1,
+    );
+    let listed =
+        app.ok(json!({"command":"archive_index","name":"mixed.zip","parts":zip_whole["parts"]}));
+    assert_eq!(
+        listed["contents"]["entries"][0],
+        json!({"name":"clip.mkv","size":2_000_000})
+    );
+    assert!(listed["fetched"].as_u64().unwrap() * 10 < zip_whole["size"].as_u64().unwrap());
+
+    let zip_split = build(
+        &mut app,
+        "zip",
+        "photos.zip",
+        json!([{"name":"a.jpg","bytes":700_000},{"name":"b.jpg","bytes":700_000}]),
+        2,
+    );
+    let listed =
+        app.ok(json!({"command":"archive_index","name":"photos.zip","parts":zip_split["parts"]}));
+    assert_eq!(listed["contents"]["totalEntries"], 2, "{listed}");
+
+    // Only the largest entries are reported.
+    let many: Vec<_> = (0..600)
+        .map(|index| json!({"name":format!("f{index:03}.txt"),"bytes":index}))
+        .collect();
+    let crowded = build(&mut app, "zip", "many.zip", json!(many), 1);
+    let listed =
+        app.ok(json!({"command":"archive_index","name":"many.zip","parts":crowded["parts"]}));
+    assert_eq!(listed["contents"]["totalEntries"], 600);
+    assert_eq!(listed["contents"]["entries"].as_array().unwrap().len(), 500);
+    assert_eq!(listed["contents"]["entries"][0]["name"], "f599.txt");
+
+    // Damaged and unsupported archives are unreadable, never an error.
+    fixture.write(
+        "fake.7z",
+        b"not really an archive, only some bytes".repeat(100),
+    );
+    fixture.write("old.rar", b"Rar!\x1a\x07\x01\x00");
+    for name in ["fake.7z", "old.rar"] {
+        let listed = app.ok(json!({"command":"archive_index","name":name,"parts":[name]}));
+        assert_eq!(
+            listed["contents"],
+            json!({"key":"fixture","readable":false,"entries":[],"totalEntries":0}),
+            "{name}"
+        );
+    }
+    app.stop();
+}
+
 // A file stored as numbered parts downloads part by part, then the parts are
 // joined in order into one published file. The parts are real saved files
 // recorded as completed downloads in the persisted transfer queue.

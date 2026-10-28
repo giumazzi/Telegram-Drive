@@ -18,6 +18,8 @@ export async function desktopFixture(page: Page, options: {
   /** Path returned by the native save dialog. */
   savePickerPath?: string;
   joinFails?: boolean;
+  /** What cmd_inspect_archives reports per archive name; others are unreadable. */
+  archiveContents?: Record<string, { entries: { name: string; size: number }[] }>;
   accountFailures?: number;
   holdFiles?: boolean;
   holdStartupHealth?: boolean;
@@ -179,6 +181,14 @@ export async function desktopFixture(page: Page, options: {
           if (command === 'cmd_get_sync_pairs') return state.sync.pairs;
           if (command === 'cmd_get_sync_status') return { enabled: state.sync.settings.enabled, running: false, activePairs: 0, pendingOps: 0, conflicts: 0, lastError: null, pairs: [] };
           if (command === 'plugin:dialog|save') return options.savePickerPath ?? '/synthetic/Downloads/photo.jpg';
+          if (command === 'cmd_inspect_archives') {
+            return args.archives.map((archive: any) => {
+              const contents = options.archiveContents?.[archive.name];
+              return contents
+                ? { key: archive.key, readable: true, entries: contents.entries, totalEntries: contents.entries.length }
+                : { key: archive.key, readable: false, entries: [], totalEntries: 0 };
+            });
+          }
           if (command === 'cmd_join_split_download') {
             if (options.joinFails) throw new Error('A downloaded part is unavailable');
             return JSON.stringify({ outcome: 'saved', savePath: args.destination });
