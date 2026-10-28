@@ -13,11 +13,13 @@ export interface FileActionDescriptor {
 
 export function describeFileActions(file: TelegramFile): FileActionDescriptor {
   const isFolder = file.type === 'folder';
+  // A file stored in parts has no single message to rename or link to.
+  const whole = !isFolder && !file.splitParts;
   return {
     isFolder,
-    canShare: !isFolder,
+    canShare: whole,
     canMove: !isFolder,
-    canRename: !isFolder,
+    canRename: whole,
     previewAction: isFolder
       ? 'open'
       : isMediaFile(file.name)

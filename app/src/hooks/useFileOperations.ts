@@ -10,6 +10,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useConfirm } from '../context/ConfirmContext';
 import { TelegramFile } from '../types';
+import { expandSplitParts } from '../services/splitFiles';
 import { updateFileQueryData, invalidateOwnedFileQueries } from '../services/fileListRefresh';
 import { userFacingError } from '../services/userFacingError';
 import { useTranslation } from 'react-i18next';
@@ -42,17 +43,23 @@ export function useFileOperations(
             ? displayedFilesRef.current.find(candidate => candidate.id === target)
             : target;
         if (!file) { toast.error(t('common.operation_failed')); return; }
-        const id = file.id;
         const sourceFolderId = sourceFolder(file, activeFolderId);
         if (!await confirm({ title: t('operations.delete_file'), message: t('operations.delete_file_question'), confirmText: i18n.t("files.delete"), variant: 'danger' }) || !isCurrent()) return;
+        // A file stored in parts is deleted part by part.
+        const deleted: number[] = [];
         try {
-            await invoke('cmd_delete_file', { messageId: id, folderId: sourceFolderId, ownerId });
-            if (!isCurrent()) return;
-            updateFileQueryData(queryClient, sourceFolderId, new Set([id]), () => null, ownerId);
+            for (const part of expandSplitParts([file])) {
+                await invoke('cmd_delete_file', { messageId: part.id, folderId: sourceFolderId, ownerId });
+                if (!isCurrent()) return;
+                deleted.push(part.id);
+            }
+            updateFileQueryData(queryClient, sourceFolderId, new Set(deleted), () => null, ownerId);
             void invalidateOwnedFileQueries(queryClient, ownerId);
             toast.success(t('operations.file_deleted'));
         } catch (error) {
-            if (isCurrent()) toast.error(userFacingError(error, t));
+            if (!isCurrent()) return;
+            if (deleted.length) void invalidateOwnedFileQueries(queryClient, ownerId);
+            toast.error(userFacingError(error, t));
         }
     }, [activeFolderId, capture, confirm, ownerId, queryClient, t]);
 
@@ -61,10 +68,11 @@ export function useFileOperations(
         if (!ownerId || !isCurrent()) return;
         const ids = [...selectedIdsRef.current];
         if (ids.length === 0) return;
-        const targets = ids.map(id => displayedFilesRef.current.find(file => file.id === id))
-            .filter((file): file is TelegramFile => Boolean(file))
-            .map(file => ({ id: file.id, folderId: sourceFolder(file, activeFolderId) }));
-        if (targets.length !== ids.length) { toast.error(t('common.operation_failed')); return; }
+        const selected = ids.map(id => displayedFilesRef.current.find(file => file.id === id))
+            .filter((file): file is TelegramFile => Boolean(file));
+        if (selected.length !== ids.length) { toast.error(t('common.operation_failed')); return; }
+        const targets = selected.flatMap(file => expandSplitParts([file])
+            .map(part => ({ id: part.id, folderId: sourceFolder(file, activeFolderId) })));
         if (!await confirm({ title: t('operations.delete_files'), message: t('operations.delete_files_question',{count:ids.length}), confirmText: t('operations.delete_all'), variant: 'danger' }) || !isCurrent()) return;
         let success = 0;
         let fail = 0;
@@ -112,7 +120,8 @@ export function useFileOperations(
     const handleMoveFiles = useCallback(async (files: TelegramFile[], targetFolderId: number | null, onSuccess?: () => void, confirmLarge = false) => {
         const isCurrent = capture();
         if (!ownerId || !isCurrent() || !files.length) return false;
-        const ids = [...new Set(files.map(file => file.id))];
+        // A file stored in parts moves with all of its parts.
+        const ids = [...new Set(expandSplitParts(files).map(file => file.id))];
         const sourceFolders = new Set(files.map(file => sourceFolder(file, activeFolderId)));
         if (sourceFolders.size !== 1) { toast.info(t('operations.move_one_source')); return false; }
         const sourceFolderId = sourceFolders.values().next().value!;

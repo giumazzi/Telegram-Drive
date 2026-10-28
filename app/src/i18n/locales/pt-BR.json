@@ -1624,5 +1624,12 @@
     "split_title": "Agrupar arquivos divididos",
     "split_intro": "Cada série de partes vai para uma pasta própria, com o nome do arquivo completo. Você confirma cada pasta antes de qualquer movimentação.",
     "split_nothing": "Nenhum arquivo dividido foi encontrado aqui."
+  },
+  "split_files": {
+    "parts": "Partes: {{count}}",
+    "whole_file_only": "Este arquivo está salvo em partes; não é possível renomeá-lo nem compartilhá-lo.",
+    "download_to_open": "Baixe o arquivo completo para abri-lo.",
+    "downloading": "Baixando {{name}} ({{count}} partes); elas serão unidas automaticamente.",
+    "join_failed": "{{name}} foi baixado, mas as partes não puderam ser unidas. Elas ficaram na pasta de download."
   }
 }

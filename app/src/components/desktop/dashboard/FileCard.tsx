@@ -183,6 +183,7 @@ export function FileCard({ file, onDelete, onDownload, onPreview, onShare, isSel
                     <div className="file-card-metadata mt-0.5 flex h-4 w-full min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap">
                         <p className={`shrink-0 text-metadata ${thumbnail ? 'text-white/70' : 'text-app-text-secondary'}`}>{file.sizeStr}</p>
                         <EncryptionBadge state={file.encryption_state ?? 'plain'} className="shrink-0" />
+                        {file.splitParts && <span className="shrink-0 rounded bg-app-selected px-1 text-badge font-medium text-app-accent">{i18n.t('split_files.parts', { count: file.splitParts.length })}</span>}
                         <VideoMetaBadge metadata={videoMeta} isLoading={videoMetaLoading} />
                         {cachedQualities.length > 0 && (
                             <span className="inline-flex min-w-0 items-center gap-0.5 overflow-hidden">

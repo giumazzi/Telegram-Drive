@@ -1617,5 +1617,12 @@
     "split_title": "归类分卷文件",
     "split_intro": "每组分卷会移动到以完整文件命名的单独文件夹。每个文件夹在移动前都需要你确认。",
     "split_nothing": "这里没有分卷文件。"
+  },
+  "split_files": {
+    "parts": "分卷数:{{count}}",
+    "whole_file_only": "此文件以分卷形式存储,无法重命名或分享。",
+    "download_to_open": "请下载完整文件后打开。",
+    "downloading": "正在下载 {{name}}({{count}} 个分卷),下载后将自动合并。",
+    "join_failed": "{{name}} 已下载,但分卷无法合并。分卷已保留在下载文件夹中。"
   }
 }

@@ -16,6 +16,8 @@ export interface TelegramFile {
   is_pinned?: boolean;
   last_opened_at?: number;
   offline_available?: boolean;
+  /** Set on a listed file that stands for a complete set of raw parts (`name.ext.001`…), in part order. */
+  splitParts?: TelegramFile[];
 }
 
 export type SmartView = 'recents' | 'favorites' | 'pinned' | 'offline' | 'large' | 'old' | 'duplicates';

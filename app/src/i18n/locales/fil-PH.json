@@ -1617,5 +1617,12 @@
     "split_title": "Pagsamahin ang mga hinating file",
     "split_intro": "Inililipat ang bawat hanay ng mga bahagi sa sarili nitong folder, na ipinangalan sa buong file. Kinukumpirma mo ang bawat folder bago may mailipat.",
     "split_nothing": "Walang hinating file dito."
+  },
+  "split_files": {
+    "parts": "Mga bahagi: {{count}}",
+    "whole_file_only": "Naka-imbak nang pira-piraso ang file na ito; hindi ito mapapalitan ng pangalan o maibabahagi.",
+    "download_to_open": "I-download ang buong file para mabuksan ito.",
+    "downloading": "Dina-download ang {{name}} ({{count}} bahagi); awtomatiko silang pagsasamahin.",
+    "join_failed": "Na-download ang {{name}}, pero hindi napagsama ang mga bahagi nito. Naiwan ang mga ito sa folder ng download."
   }
 }

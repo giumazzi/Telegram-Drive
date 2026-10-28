@@ -1617,5 +1617,12 @@
     "split_title": "Group split files",
     "split_intro": "Each set of parts moves into its own folder, named after the whole file. You confirm each folder before anything moves.",
     "split_nothing": "No split files were found here."
+  },
+  "split_files": {
+    "parts": "Parts: {{count}}",
+    "whole_file_only": "This file is stored in parts; rename or share is not available for it.",
+    "download_to_open": "Download the whole file to open it.",
+    "downloading": "Downloading {{name}} ({{count}} parts); they will be joined automatically.",
+    "join_failed": "{{name}} downloaded, but its parts could not be joined. They were kept in the download folder."
   }
 }

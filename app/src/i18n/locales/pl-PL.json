@@ -1631,5 +1631,12 @@
     "split_title": "Grupuj podzielone pliki",
     "split_intro": "Każdy zestaw części trafia do osobnego folderu nazwanego jak cały plik. Potwierdzasz każdy folder przed przeniesieniem.",
     "split_nothing": "Nie znaleziono tu podzielonych plików."
+  },
+  "split_files": {
+    "parts": "Części: {{count}}",
+    "whole_file_only": "Ten plik jest zapisany w częściach; nie można zmienić jego nazwy ani go udostępnić.",
+    "download_to_open": "Pobierz cały plik, aby go otworzyć.",
+    "downloading": "Pobieranie {{name}} (części: {{count}}); zostaną połączone automatycznie.",
+    "join_failed": "Pobrano {{name}}, ale nie udało się połączyć części. Pozostały w folderze pobierania."
   }
 }

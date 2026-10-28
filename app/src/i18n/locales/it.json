@@ -1624,5 +1624,12 @@
     "split_title": "Raggruppa file spezzati",
     "split_intro": "Ogni serie di parti viene spostata in una cartella propria, con il nome del file intero. Confermi ogni cartella prima che venga spostato qualcosa.",
     "split_nothing": "Qui non ci sono file spezzati."
+  },
+  "split_files": {
+    "parts": "Parti: {{count}}",
+    "whole_file_only": "Questo file è salvato in parti: non si può rinominare né condividere.",
+    "download_to_open": "Scarica il file intero per aprirlo.",
+    "downloading": "Download di {{name}} ({{count}} parti); verranno riunite automaticamente.",
+    "join_failed": "{{name}} è stato scaricato, ma le sue parti non sono state riunite. Sono rimaste nella cartella di download."
   }
 }

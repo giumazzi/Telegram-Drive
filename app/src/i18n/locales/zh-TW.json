@@ -1617,5 +1617,12 @@
     "split_title": "歸類分割檔案",
     "split_intro": "每組分割檔案會移動到以完整檔名命名的獨立資料夾。每個資料夾在移動前都需要你確認。",
     "split_nothing": "這裡沒有分割檔案。"
+  },
+  "split_files": {
+    "parts": "分割數:{{count}}",
+    "whole_file_only": "此檔案以分割形式儲存,無法重新命名或分享。",
+    "download_to_open": "請下載完整檔案後開啟。",
+    "downloading": "正在下載 {{name}}({{count}} 個分割檔),完成後將自動合併。",
+    "join_failed": "{{name}} 已下載,但分割檔無法合併。分割檔已保留在下載資料夾中。"
   }
 }

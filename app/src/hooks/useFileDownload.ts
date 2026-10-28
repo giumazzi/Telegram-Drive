@@ -9,6 +9,8 @@ import { DownloadItem, FileEncryptionInfo, TelegramFile, VaultStatus } from '../
 import { isAndroidPlatform, showFileDialogFallback, pickWithFallback, sanitizeFilename } from '../utils';
 import { useSettings } from '../context/SettingsContext';
 import type { Store } from '@tauri-apps/plugin-store';
+import type { DesktopTransferJob } from '../services/desktopTransferEngine';
+import type { DownloadCollisionPolicy } from '../types/transfers';
 import { useTranslation } from 'react-i18next';
 import { revealItemInDir } from '@tauri-apps/plugin-opener';
 import { useConfirm } from '../context/ConfirmContext';
@@ -29,6 +31,19 @@ import {
     transferItemAction,
     transferJobToDownloadItem,
 } from '../services/desktopTransferEngine';
+
+/** A file stored in parts: its parts download as ordinary transfers, then join. */
+interface SplitJoinGroup {
+    id: string;
+    ownerId: string;
+    name: string;
+    destination: string;
+    collisionPolicy: DownloadCollisionPolicy;
+    expectedBytes: number;
+    partIds: string[];
+}
+
+const SPLIT_JOIN_STORE_KEY = 'splitJoinGroups';
 
 interface ProgressPayload {
     id: string;
@@ -71,6 +86,57 @@ export function useFileDownload(
     const { settings, updateSetting } = useSettings();
     const { confirm, chooseDownloadCollision, promptSecret } = useConfirm();
     const lastDownloadDirectoryRef = useRef<string | null>(null);
+    const splitGroupsRef = useRef<SplitJoinGroup[]>([]);
+    const splitJobsRef = useRef<Map<string, DesktopTransferJob>>(new Map());
+    const joiningRef = useRef<Set<string>>(new Set());
+    const storeRef = useRef(store);
+    storeRef.current = store;
+
+    const persistSplitGroups = () => {
+        const current = storeRef.current;
+        if (!current) return;
+        void current.set(SPLIT_JOIN_STORE_KEY, splitGroupsRef.current)
+            .then(() => current.save())
+            .catch(error => console.error('[Download] Could not save split-file joins:', error));
+    };
+
+    /** Join every split file whose parts have all been saved. */
+    const joinCompletedSplitFiles = () => {
+        for (const group of splitGroupsRef.current) {
+            if (group.ownerId !== ownerRef.current || joiningRef.current.has(group.id)) continue;
+            const jobs = group.partIds.map(id => splitJobsRef.current.get(id));
+            if (jobs.some(job => !job || job.status !== 'completed' || job.downloadOutcome === 'skipped' || !job.savePath)) continue;
+            joiningRef.current.add(group.id);
+            const finish = () => {
+                splitGroupsRef.current = splitGroupsRef.current.filter(candidate => candidate.id !== group.id);
+                joiningRef.current.delete(group.id);
+                persistSplitGroups();
+            };
+            void invoke<string>('cmd_join_split_download', {
+                ownerId: group.ownerId,
+                partPaths: jobs.map(job => job!.savePath),
+                destination: group.destination,
+                collisionPolicy: group.collisionPolicy,
+                expectedBytes: group.expectedBytes,
+            }).then(response => {
+                finish();
+                if (ownerRef.current !== group.ownerId) return;
+                const publication = JSON.parse(response) as { outcome: string; savePath: string };
+                if (publication.outcome === 'skipped') {
+                    toast.info(t('downloadCollision.skipped'));
+                    return;
+                }
+                triggerHaptic('success');
+                toast.success(i18n.t('transfer_copy.downloaded', { name: publication.savePath.split(/[\\/]/).pop() }), {
+                    action: { label: i18n.t('common.show_in_folder'), onClick: () => { void revealItemInDir(publication.savePath); } },
+                });
+            }).catch(error => {
+                finish();
+                console.error('[Download] Could not join split file:', error);
+                if (ownerRef.current === group.ownerId) toast.error(t('split_files.join_failed', { name: group.name }));
+            });
+        }
+    };
     const webDavTipShownRef = useRef(settings.downloadWebdavTipSeen);
 
     useEffect(() => {
@@ -140,8 +206,12 @@ export function useFileDownload(
             setDownloadQueue(queue => queue.some(candidate => candidate.id === item.id)
                 ? queue.map(candidate => candidate.id === item.id ? item : candidate)
                 : [...queue, item]);
+            splitJobsRef.current.set(job.id, job);
+            // A part of a split file reports success once, after its join.
+            const splitPart = splitGroupsRef.current.some(group => group.partIds.includes(job.id));
+            if (splitPart) joinCompletedSplitFiles();
             // Folder Sync downloads into its mapped folder and reports there.
-            if (notifyTransition && previousStatus !== job.status && !job.origin) {
+            if (notifyTransition && previousStatus !== job.status && !job.origin && !(splitPart && job.status === 'completed')) {
                 if (job.status === 'completed' && job.downloadOutcome === 'skipped') {
                     toast.info(t('downloadCollision.skipped'));
                 } else if (job.status === 'completed') {
@@ -199,6 +269,10 @@ export function useFileDownload(
         if (!store || initialized || initializingRef.current || (!isAndroidPlatform && !ownerId)) return;
         initializingRef.current = true;
         if (!isAndroidPlatform) {
+            void store.get<SplitJoinGroup[]>(SPLIT_JOIN_STORE_KEY).then(saved => {
+                splitGroupsRef.current = Array.isArray(saved) ? saved : [];
+                joinCompletedSplitFiles();
+            }).catch(error => console.error('[Download] Could not read split-file joins:', error));
             void store.get<DownloadItem[]>('downloadQueue').then(async saved => {
                 const pending = saved ? restoreDownloadQueue(saved, false) : [];
                 const prepared: DownloadItem[] = [];
@@ -614,12 +688,10 @@ export function useFileDownload(
         }
     };
 
-    const queueDownload = async (messageId: number, filename: string, folderId: number | null, fileSize?: number) => {
-        requireCurrent();
-        const actionOwnerId = ownerId;
-        const cleanName = sanitizeFilename(filename);
+    /** Asks where to save one file, reusing the last directory when the user agrees. */
+    const chooseSavePath = async (cleanName: string, fileSize: number | undefined, retry: () => void): Promise<string | undefined> => {
         let savePath: string | undefined;
-        if (!isAndroidPlatform && lastDownloadDirectoryRef.current) {
+        if (lastDownloadDirectoryRef.current) {
             const destination = lastDownloadDirectoryRef.current;
             const accepted = await confirm({
                 title: i18n.t('transfer_copy.download_file'),
@@ -630,22 +702,102 @@ export function useFileDownload(
             });
             if (accepted) savePath = joinPath(destination, cleanName);
         }
-        if (!isAndroidPlatform && !savePath) {
+        if (!savePath) {
             const selected = await pickWithFallback(
                 () => save({ defaultPath: cleanName }),
-                () => queueDownload(messageId, filename, folderId, fileSize),
+                retry,
                 { errorTitle: 'Save dialog failed' },
             );
-            if (!selected) return;
+            if (!selected) return undefined;
             const accepted = await confirm({
                 title: i18n.t('transfer_copy.confirm_download'),
                 message: i18n.t('transfer_copy.selection_summary',{count:1,size:formatBytes(fileSize||0),destination:directoryFromPath(selected)}),
                 confirmText: i18n.t('files.download'),
                 variant: 'info',
             });
-            if (!accepted) return;
+            if (!accepted) return undefined;
             savePath = selected;
             lastDownloadDirectoryRef.current = directoryFromPath(selected);
+        }
+        return savePath;
+    };
+
+    /** Download items for each part, saved beside `destination`, and its join record. */
+    const splitDownloadPlan = (
+        file: TelegramFile,
+        folderId: number | null,
+        destination: string,
+        collisionPolicy: DownloadCollisionPolicy,
+        actionOwnerId: string,
+    ): { items: DownloadItem[]; group: SplitJoinGroup } => {
+        const directory = directoryFromPath(destination);
+        // Parts never replace or skip anything: the collision choice applies to the joined file.
+        const items: DownloadItem[] = (file.splitParts ?? []).map(part => ({
+            id: crypto.randomUUID(),
+            ownerId: actionOwnerId,
+            messageId: part.id,
+            filename: sanitizeFilename(part.name),
+            folderId,
+            status: 'pending' as const,
+            totalBytes: part.size,
+            savePath: joinPath(directory, sanitizeFilename(part.name)),
+            collisionPolicy: 'keep_both' as const,
+        }));
+        return {
+            items,
+            group: {
+                id: crypto.randomUUID(),
+                ownerId: actionOwnerId,
+                name: sanitizeFilename(file.name),
+                destination,
+                collisionPolicy,
+                expectedBytes: (file.splitParts ?? []).reduce((sum, part) => sum + part.size, 0),
+                partIds: items.map(item => item.id),
+            },
+        };
+    };
+
+    const enqueueSplitGroups = async (groups: SplitJoinGroup[], items: DownloadItem[]) => {
+        // Recorded before the parts start, so a join survives a restart.
+        splitGroupsRef.current = [...splitGroupsRef.current, ...groups];
+        persistSplitGroups();
+        try {
+            await enqueueDownloadItems(items);
+        } catch (error) {
+            const ids = new Set(groups.map(group => group.id));
+            splitGroupsRef.current = splitGroupsRef.current.filter(group => !ids.has(group.id));
+            persistSplitGroups();
+            throw error;
+        }
+    };
+
+    /** Downloads every part of a split file and joins them into one file. */
+    const queueSplitDownload = async (file: TelegramFile, folderId: number | null) => {
+        requireCurrent();
+        if (isAndroidPlatform || !file.splitParts?.length) {
+            await queueDownload(file.id, file.name, folderId, file.size);
+            return;
+        }
+        const actionOwnerId = ownerId;
+        const savePath = await chooseSavePath(sanitizeFilename(file.name), file.size, () => queueSplitDownload(file, folderId));
+        if (!savePath) return;
+        if (!actionOwnerId || !isCurrent() || ownerRef.current !== actionOwnerId) throw new Error("ACCOUNT_CHANGED");
+        const collisionPolicy = await chooseDownloadCollision();
+        if (!collisionPolicy) return;
+        if (!isCurrent() || ownerRef.current !== actionOwnerId) throw new Error("ACCOUNT_CHANGED");
+        const { items, group } = splitDownloadPlan(file, folderId, savePath, collisionPolicy, actionOwnerId);
+        await enqueueSplitGroups([group], items);
+        toast.info(t('split_files.downloading', { name: group.name, count: items.length }));
+    };
+
+    const queueDownload = async (messageId: number, filename: string, folderId: number | null, fileSize?: number) => {
+        requireCurrent();
+        const actionOwnerId = ownerId;
+        const cleanName = sanitizeFilename(filename);
+        let savePath: string | undefined;
+        if (!isAndroidPlatform) {
+            savePath = await chooseSavePath(cleanName, fileSize, () => queueDownload(messageId, filename, folderId, fileSize));
+            if (!savePath) return;
         }
         if (!isCurrent() || ownerRef.current !== actionOwnerId) throw new Error("ACCOUNT_CHANGED");
         const collisionPolicy = !isAndroidPlatform ? await chooseDownloadCollision() : 'keep_both';
@@ -697,7 +849,14 @@ export function useFileDownload(
             if (!collisionPolicy) return;
             if (!isCurrent() || ownerRef.current !== actionOwnerId) throw new Error("ACCOUNT_CHANGED");
             const separator = dir.includes('\\') ? '\\' : '/';
-            const newItems: DownloadItem[] = files.map(file => {
+            const splitPlans = files.filter(file => file.splitParts?.length).map(file => splitDownloadPlan(
+                file,
+                file.folder_id === undefined ? folderId : file.folder_id,
+                dir.endsWith(separator) ? `${dir}${sanitizeFilename(file.name)}` : `${dir}${separator}${sanitizeFilename(file.name)}`,
+                collisionPolicy,
+                actionOwnerId!,
+            ));
+            const newItems: DownloadItem[] = files.filter(file => !file.splitParts?.length).map(file => {
                 const sanitizedName = sanitizeFilename(file.name);
                 return {
                     id: crypto.randomUUID(),
@@ -723,8 +882,12 @@ export function useFileDownload(
                 });
             }
             batch.passphrase = undefined;
+            // Split files are plain; their parts need no credentials.
+            if (splitPlans.length) {
+                await enqueueSplitGroups(splitPlans.map(plan => plan.group), splitPlans.flatMap(plan => plan.items));
+            }
             await enqueueDownloadItems(prepared);
-            toast.info(i18n.t('transfer_copy.queued_downloads',{count:prepared.length}));
+            toast.info(i18n.t('transfer_copy.queued_downloads',{count:prepared.length + splitPlans.length}));
         };
 
         const totalSize = files.reduce((sum, file) => sum + (file.size || 0), 0);
@@ -903,6 +1066,7 @@ export function useFileDownload(
     return {
         downloadQueue: downloadQueue.filter(item => Boolean(ownerId) && item.ownerId === ownerId),
         queueDownload,
+        queueSplitDownload,
         queueBulkDownload,
         clearFinished,
         cancelAll,

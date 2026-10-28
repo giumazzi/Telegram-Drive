@@ -40,6 +40,7 @@ import { KeyboardShortcutsDialog } from './dashboard/KeyboardShortcutsDialog';
 import { DriveConceptTour } from './dashboard/DriveConceptTour';
 import { LazyFeatureBoundary } from '../shared/LazyFeatureBoundary';
 import { SyncDashboard } from './sync/SyncDashboard';
+import { groupSplitFiles } from '../../services/splitFiles';
 import { Files, Link, Copy, Check, X, Loader2, Share2 } from 'lucide-react';
 
 // Hooks
@@ -316,8 +317,10 @@ export function Dashboard({ onLogout }: { onLogout: () => void }) {
 
     const displayedFiles = useMemo(() => {
         if (searchFilters.scope === 'all') return searchResults;
-        return filterAndRankFiles(allFiles, searchTerm, searchFilters);
-    }, [allFiles, searchResults, searchTerm, searchFilters]);
+        const files = filterAndRankFiles(allFiles, searchTerm, searchFilters);
+        // Inside a folder, each complete set of raw parts is listed as one file.
+        return activeSmartView === null ? groupSplitFiles(files) : files;
+    }, [activeSmartView, allFiles, searchResults, searchTerm, searchFilters]);
     const isCrossFolderView = activeSmartView !== null
         || searchFilters.scope === 'all';
     useEffect(() => { if (isCrossFolderView) setSelectedIds([]); }, [isCrossFolderView]);
@@ -341,7 +344,7 @@ export function Dashboard({ onLogout }: { onLogout: () => void }) {
 
 
     const { uploadQueue, handleManualUpload, handleFolderUpload, handleDropUpload, handleUrlUpload, clearFinished: clearUploads, cancelAll: cancelUploads, pauseAll: pauseUploads, resumeAll: resumeUploads, cancelItem: cancelUploadItem, retryItem: retryUploadItem } = useFileUpload(activeFolderId, store, undefined, undefined, accountId ?? undefined);
-    const { downloadQueue, queueDownload, queueBulkDownload, clearFinished: clearDownloads, cancelAll: cancelDownloads, pauseAll: pauseDownloads, resumeAll: resumeDownloads, cancelItem: cancelDownloadItem, retryItem: retryDownloadItem } = useFileDownload(store, undefined, undefined, accountId ?? undefined);
+    const { downloadQueue, queueDownload, queueSplitDownload, queueBulkDownload, clearFinished: clearDownloads, cancelAll: cancelDownloads, pauseAll: pauseDownloads, resumeAll: resumeDownloads, cancelItem: cancelDownloadItem, retryItem: retryDownloadItem } = useFileDownload(store, undefined, undefined, accountId ?? undefined);
 
     const showSupporterOffer = useSupporterPrompt(
         Boolean(!accountId || isLoading || isSyncing || previewFile || playingFile || pdfFile || archiveViewFile
@@ -360,7 +363,8 @@ export function Dashboard({ onLogout }: { onLogout: () => void }) {
     } = useFileOperations(activeFolderId, selectedIds, setSelectedIds, displayedFiles, queueBulkDownload, accountId);
 
     const handleBulkShare = useCallback(() => createBulkShares(
-        displayedFiles.filter(file => selectedIds.includes(file.id) && file.type !== 'folder'),
+        // A file stored in parts has no single message to link to.
+        displayedFiles.filter(file => selectedIds.includes(file.id) && file.type !== 'folder' && !file.splitParts),
         () => setSelectedIds([]),
     ), [createBulkShares, displayedFiles, selectedIds]);
 
@@ -483,8 +487,9 @@ export function Dashboard({ onLogout }: { onLogout: () => void }) {
 
     const handleRename = useCallback((file: TelegramFile) => {
         if (!accountId || !captureMutationScope()()) return;
+        if (file.splitParts) { toast.info(t('split_files.whole_file_only')); return; }
         setRenameRequest({ ownerId: accountId, file: { ...file, folder_id: sourceFolder(file, activeFolderId) } });
-    }, [accountId, activeFolderId, captureMutationScope]);
+    }, [accountId, activeFolderId, captureMutationScope, t]);
 
     const handleRenameSubmit = useCallback(async (newName: string) => {
         if (!renameRequest || renameRequest.ownerId !== accountId || !captureMutationScope()()) return;
@@ -529,6 +534,7 @@ export function Dashboard({ onLogout }: { onLogout: () => void }) {
     });
 
     const handlePreview = (file: TelegramFile, orderedFiles?: TelegramFile[], localPath?: string) => {
+        if (file.splitParts) { toast.info(t('split_files.download_to_open')); return; }
         setLocalPreview(localPath ? { key: previewFileKey(file), path: localPath } : null);
         if (localPath && !isMediaFile(file.name) && !isPdfFile(file.name) && !isImageFile(file.name)) {
             setPlayingFile(null); setPreviewFile(null); setPdfFile(null); setArchiveViewFile(null);
@@ -962,13 +968,15 @@ export function Dashboard({ onLogout }: { onLogout: () => void }) {
                     activeFolderId={activeFolderId}
                     onFileClick={handleFileClick}
                     onDelete={handleDelete}
-                    onDownload={(file) => queueDownload(file.id, file.name, sourceFolder(file, activeFolderId), file.size)}
+                    onDownload={(file) => file.splitParts
+                        ? void queueSplitDownload(file, sourceFolder(file, activeFolderId))
+                        : queueDownload(file.id, file.name, sourceFolder(file, activeFolderId), file.size)}
                     onPreview={handlePreview}
                     onManualUpload={handleManualUpload}
                     onFolderUpload={handleFolderUpload}
                     showFolderUpload={settings.zipFolders}
                     onToggleSelection={handleToggleSelection}
-                    onShare={setShareFile}
+                    onShare={file => file.splitParts ? toast.info(t('split_files.whole_file_only')) : setShareFile(file)}
                     onRename={handleRename}
                     onFileMove={handleFileMove}
                     cardScale={cardScale}

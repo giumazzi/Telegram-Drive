@@ -1617,5 +1617,12 @@
     "split_title": "Nhóm các tệp bị chia nhỏ",
     "split_intro": "Mỗi bộ phần được chuyển vào thư mục riêng, đặt theo tên tệp đầy đủ. Bạn xác nhận từng thư mục trước khi di chuyển.",
     "split_nothing": "Không có tệp bị chia nhỏ nào ở đây."
+  },
+  "split_files": {
+    "parts": "Số phần: {{count}}",
+    "whole_file_only": "Tệp này được lưu thành nhiều phần; không thể đổi tên hoặc chia sẻ.",
+    "download_to_open": "Hãy tải xuống toàn bộ tệp để mở.",
+    "downloading": "Đang tải {{name}} ({{count}} phần); các phần sẽ được ghép tự động.",
+    "join_failed": "Đã tải {{name}}, nhưng không thể ghép các phần. Các phần vẫn nằm trong thư mục tải xuống."
   }
 }

@@ -1700,7 +1700,7 @@ impl Drop for PartialFileGuard {
     }
 }
 
-fn create_private_partial_file(path: &std::path::Path) -> Result<std::fs::File, String> {
+pub(crate) fn create_private_partial_file(path: &std::path::Path) -> Result<std::fs::File, String> {
     let mut options = std::fs::OpenOptions::new();
     options.create_new(true).write(true);
     #[cfg(unix)]
@@ -1711,7 +1711,9 @@ fn create_private_partial_file(path: &std::path::Path) -> Result<std::fs::File, 
     options.open(path).map_err(|error| error.to_string())
 }
 
-fn download_partial_path(destination: &std::path::Path) -> Result<std::path::PathBuf, String> {
+pub(crate) fn download_partial_path(
+    destination: &std::path::Path,
+) -> Result<std::path::PathBuf, String> {
     let parent = destination
         .parent()
         .filter(|path| !path.as_os_str().is_empty())

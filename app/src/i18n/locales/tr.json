@@ -1617,5 +1617,12 @@
     "split_title": "Bölünmüş dosyaları grupla",
     "split_intro": "Her parça seti, tüm dosyanın adını taşıyan kendi klasörüne taşınır. Herhangi bir şey taşınmadan önce her klasörü onaylarsınız.",
     "split_nothing": "Burada bölünmüş dosya bulunamadı."
+  },
+  "split_files": {
+    "parts": "Parça: {{count}}",
+    "whole_file_only": "Bu dosya parçalar halinde saklanıyor; yeniden adlandırılamaz veya paylaşılamaz.",
+    "download_to_open": "Açmak için dosyanın tamamını indirin.",
+    "downloading": "{{name}} indiriliyor ({{count}} parça); otomatik olarak birleştirilecek.",
+    "join_failed": "{{name}} indirildi ancak parçaları birleştirilemedi. Parçalar indirme klasöründe bırakıldı."
   }
 }

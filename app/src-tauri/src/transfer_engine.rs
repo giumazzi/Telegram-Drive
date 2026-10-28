@@ -1480,13 +1480,7 @@ impl TransferEngine {
             .read()
             .await
             .values()
-            .filter(|job| {
-                job.owner_id.as_deref() == Some(owner_id)
-                    && job.direction == TransferDirection::Download
-                    && job.status == TransferStatus::Completed
-                    && job.download_outcome != Some(DownloadOutcome::Skipped)
-                    && !job.persistence_pending
-            })
+            .filter(|job| is_saved_download(job, owner_id))
             .cloned()
             .collect();
         account.validate()?;
@@ -1553,6 +1547,15 @@ impl TransferEngine {
         }
         Ok(changed)
     }
+}
+
+/// A download of `owner_id` whose file was saved and recorded.
+pub(crate) fn is_saved_download(job: &TransferJob, owner_id: &str) -> bool {
+    job.owner_id.as_deref() == Some(owner_id)
+        && job.direction == TransferDirection::Download
+        && job.status == TransferStatus::Completed
+        && job.download_outcome != Some(DownloadOutcome::Skipped)
+        && !job.persistence_pending
 }
 
 fn select_pending_job_ids(

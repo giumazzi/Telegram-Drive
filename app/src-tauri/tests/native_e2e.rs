@@ -859,6 +859,121 @@ async fn real_http_server_streams_owned_cache_and_revokes_it_after_account_switc
     );
 }
 
+// A file stored as numbered parts downloads part by part, then the parts are
+// joined in order into one published file. The parts are real saved files
+// recorded as completed downloads in the persisted transfer queue.
+#[test]
+fn split_part_downloads_join_into_one_file_and_refuse_anything_else() {
+    let fixture = Fixture::new();
+    let saved = |id: &str, owner: &str, status: &str, name: &str| {
+        json!({
+            "id": id, "ownerId": owner, "direction": "download", "kind": "download",
+            "status": status, "downloadOutcome": "saved", "messageId": 1, "filename": name,
+            "savePath": fixture.path(name), "progress": 100, "transferredBytes": 4,
+            "totalBytes": 4, "speedBytesPerSec": 0, "queuePosition": 0, "revision": 1,
+            "createdAt": 1, "updatedAt": 2
+        })
+    };
+    let mut app = Backend::start(&fixture.0);
+    app.ok(json!({"command":"seed_account","owner":101}));
+    let part = |name: &str| fixture.path(name).to_string_lossy().into_owned();
+    let seed = |app: &mut Backend, prefix: &str| {
+        for (index, bytes) in [b"7z\xbc\xaf".as_slice(), b"-two", b"-end"]
+            .iter()
+            .enumerate()
+        {
+            let name = format!("{prefix}.7z.00{}", index + 1);
+            fixture.write(&name, bytes);
+            app.ok(json!({"command":"save_transfer",
+                "job": saved(&format!("{prefix}-{index}"), "101", "completed", &name)}));
+        }
+    };
+    seed(&mut app, "Che pipandula");
+    let parts: Vec<_> = (1..=3)
+        .map(|index| part(&format!("Che pipandula.7z.00{index}")))
+        .collect();
+
+    // A wrong total keeps every part and leaves no partial file.
+    let mismatch = app.failure(json!({"command":"split_join","owner":"101","parts":parts,
+        "destination":"Che pipandula.7z","policy":"keep_both","expectedBytes":13}));
+    assert!(mismatch.contains("expected size"), "{mismatch}");
+    for name in [
+        "Che pipandula.7z.001",
+        "Che pipandula.7z.002",
+        "Che pipandula.7z.003",
+    ] {
+        assert!(fixture.path(name).is_file(), "{name} was removed");
+    }
+    let leftovers = |fixture: &Fixture| {
+        std::fs::read_dir(&fixture.0)
+            .unwrap()
+            .filter(|entry| {
+                entry
+                    .as_ref()
+                    .unwrap()
+                    .file_name()
+                    .to_string_lossy()
+                    .ends_with(".tdpart")
+            })
+            .count()
+    };
+    assert_eq!(leftovers(&fixture), 0);
+
+    let joined = app.ok(json!({"command":"split_join","owner":"101","parts":parts,
+        "destination":"Che pipandula.7z","policy":"keep_both","expectedBytes":12}));
+    assert_eq!(joined["outcome"], "saved");
+    assert_eq!(fixture.read("Che pipandula.7z"), b"7z\xbc\xaf-two-end");
+    for name in [
+        "Che pipandula.7z.001",
+        "Che pipandula.7z.002",
+        "Che pipandula.7z.003",
+    ] {
+        assert!(
+            !fixture.path(name).exists(),
+            "{name} was kept after joining"
+        );
+    }
+    assert_eq!(leftovers(&fixture), 0);
+
+    // An existing file is kept beside the new one, or skipped on request.
+    seed(&mut app, "Che pipandula");
+    let both = app.ok(json!({"command":"split_join","owner":"101","parts":parts,
+        "destination":"Che pipandula.7z","policy":"keep_both"}));
+    assert!(
+        both["savePath"]
+            .as_str()
+            .unwrap()
+            .ends_with("Che pipandula (1).7z"),
+        "{both}"
+    );
+    seed(&mut app, "Che pipandula");
+    let skipped = app.ok(json!({"command":"split_join","owner":"101","parts":parts,
+        "destination":"Che pipandula.7z","policy":"skip"}));
+    assert_eq!(skipped["outcome"], "skipped");
+    assert_eq!(fixture.read("Che pipandula.7z"), b"7z\xbc\xaf-two-end");
+    assert!(!fixture.path("Che pipandula.7z.001").exists());
+    assert_eq!(leftovers(&fixture), 0);
+
+    // Only this account's saved downloads can be read or removed.
+    fixture.write("unrelated.txt", b"keep me");
+    fixture.write("running.7z.002", b"partial");
+    fixture.write("foreign.7z.002", b"theirs");
+    seed(&mut app, "film");
+    app.ok(json!({"command":"save_transfer","job":saved("running","101","downloading","running.7z.002")}));
+    app.ok(json!({"command":"save_transfer","job":saved("foreign","202","completed","foreign.7z.002")}));
+    for second in ["unrelated.txt", "running.7z.002", "foreign.7z.002"] {
+        let refused = app.failure(json!({"command":"split_join","owner":"101",
+            "parts":[part("film.7z.001"), part(second)],"destination":"film.7z","policy":"keep_both"}));
+        assert_eq!(refused, "Only completed downloads can be joined");
+        assert!(fixture.path(second).is_file());
+    }
+    let single = app.failure(json!({"command":"split_join","owner":"101",
+        "parts":[part("film.7z.001")],"destination":"film.7z","policy":"keep_both"}));
+    assert!(single.contains("between 2 and"), "{single}");
+    assert!(fixture.path("film.7z.001").is_file());
+    app.stop();
+}
+
 #[test]
 fn interrupted_download_persists_progress_and_requires_review_before_resume() {
     let fixture = Fixture::new();

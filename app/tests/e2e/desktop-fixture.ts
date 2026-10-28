@@ -15,6 +15,9 @@ export async function desktopFixture(page: Page, options: {
   originsFail?: boolean;
   /** Zero-based cmd_move_files calls that fail without moving their files. */
   moveFailAt?: number[];
+  /** Path returned by the native save dialog. */
+  savePickerPath?: string;
+  joinFails?: boolean;
   accountFailures?: number;
   holdFiles?: boolean;
   holdStartupHealth?: boolean;
@@ -175,7 +178,11 @@ export async function desktopFixture(page: Page, options: {
           if (command === 'cmd_set_sync_scanner') { state.sync.settings = { ...state.sync.settings, scanner: args.scanner }; return state.sync.settings; }
           if (command === 'cmd_get_sync_pairs') return state.sync.pairs;
           if (command === 'cmd_get_sync_status') return { enabled: state.sync.settings.enabled, running: false, activePairs: 0, pendingOps: 0, conflicts: 0, lastError: null, pairs: [] };
-          if (command === 'plugin:dialog|save') return '/synthetic/Downloads/photo.jpg';
+          if (command === 'plugin:dialog|save') return options.savePickerPath ?? '/synthetic/Downloads/photo.jpg';
+          if (command === 'cmd_join_split_download') {
+            if (options.joinFails) throw new Error('A downloaded part is unavailable');
+            return JSON.stringify({ outcome: 'saved', savePath: args.destination });
+          }
           if (command === 'plugin:dialog|open') return options.pickedUploadPaths ?? '/synthetic/Library';
           if (command === 'cmd_zip_folder') return options.zippedFolderPath ?? null;
           if (command === 'cmd_preview_sync_pair') return {

@@ -1617,5 +1617,12 @@
     "split_title": "Kumpulkan fail yang dipecahkan",
     "split_intro": "Setiap set bahagian dipindahkan ke foldernya sendiri, dinamakan mengikut fail penuh. Anda mengesahkan setiap folder sebelum apa-apa dipindahkan.",
     "split_nothing": "Tiada fail yang dipecahkan di sini."
+  },
+  "split_files": {
+    "parts": "Bahagian: {{count}}",
+    "whole_file_only": "Fail ini disimpan dalam bahagian; ia tidak boleh dinamakan semula atau dikongsi.",
+    "download_to_open": "Muat turun fail penuh untuk membukanya.",
+    "downloading": "Memuat turun {{name}} ({{count}} bahagian); bahagian akan dicantumkan secara automatik.",
+    "join_failed": "{{name}} telah dimuat turun, tetapi bahagiannya tidak dapat dicantumkan. Bahagian itu disimpan dalam folder muat turun."
   }
 }

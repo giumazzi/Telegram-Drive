@@ -1617,5 +1617,12 @@
     "split_title": "Geteilte Dateien gruppieren",
     "split_intro": "Jede Teilserie wird in einen eigenen Ordner mit dem Namen der ganzen Datei verschoben. Du bestätigst jeden Ordner, bevor etwas verschoben wird.",
     "split_nothing": "Hier wurden keine geteilten Dateien gefunden."
+  },
+  "split_files": {
+    "parts": "Teile: {{count}}",
+    "whole_file_only": "Diese Datei ist in Teilen gespeichert; Umbenennen und Teilen sind nicht verfügbar.",
+    "download_to_open": "Lade die ganze Datei herunter, um sie zu öffnen.",
+    "downloading": "{{name}} wird heruntergeladen ({{count}} Teile); sie werden automatisch zusammengefügt.",
+    "join_failed": "{{name}} wurde heruntergeladen, aber die Teile konnten nicht zusammengefügt werden. Sie liegen weiter im Download-Ordner."
   }
 }

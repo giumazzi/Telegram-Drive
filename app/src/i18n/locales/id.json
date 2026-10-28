@@ -1617,5 +1617,12 @@
     "split_title": "Kelompokkan file yang dipecah",
     "split_intro": "Setiap rangkaian bagian dipindahkan ke foldernya sendiri, dinamai sesuai file utuhnya. Anda mengonfirmasi setiap folder sebelum ada yang dipindahkan.",
     "split_nothing": "Tidak ada file yang dipecah di sini."
+  },
+  "split_files": {
+    "parts": "Bagian: {{count}}",
+    "whole_file_only": "File ini disimpan dalam beberapa bagian; tidak dapat diganti nama atau dibagikan.",
+    "download_to_open": "Unduh file utuh untuk membukanya.",
+    "downloading": "Mengunduh {{name}} ({{count}} bagian); bagian-bagian akan digabung otomatis.",
+    "join_failed": "{{name}} telah diunduh, tetapi bagiannya tidak dapat digabung. Bagian-bagian tetap ada di folder unduhan."
   }
 }

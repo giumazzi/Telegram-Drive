@@ -88,6 +88,7 @@ export function FileListItem({
             <div className="min-w-0 truncate text-ui font-medium text-app-text">
                 <span>{file.name}</span>
                 <EncryptionBadge state={file.encryption_state ?? 'plain'} className="ms-1.5 align-middle" />
+                {file.splitParts && <span className="ms-1.5 rounded bg-app-selected px-1 align-middle text-badge font-medium text-app-accent">{i18n.t('split_files.parts', { count: file.splitParts.length })}</span>}
                 <VideoMetaBadge metadata={videoMeta} isLoading={videoMetaLoading} />
                 {cachedQualities.length > 0 && (
                     <span className="inline-flex items-center gap-0.5 ml-1.5">

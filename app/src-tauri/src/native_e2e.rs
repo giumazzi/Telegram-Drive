@@ -1466,6 +1466,7 @@ impl Driver {
             | "upload_session"
             | "upload_assemble"
             | "publish_download"
+            | "split_join"
             | "save_transfer"
             | "transfers"
             | "fail_transfer"
@@ -4960,6 +4961,38 @@ impl Driver {
                     destination,
                     policy,
                     self.guard.clone(),
+                )
+                .await?;
+                serde_json::to_value(result).map_err(error)
+            }
+            "split_join" => {
+                // Parts are trusted only as this account's saved downloads,
+                // read from the persisted transfer queue.
+                let owner = text(&request, "owner")?;
+                let (_, jobs) =
+                    crate::transfer_engine::TransferStore::open(&self.root.join("transfers.db"))?;
+                let completed = jobs
+                    .iter()
+                    .filter(|job| crate::transfer_engine::is_saved_download(job, owner))
+                    .filter_map(|job| job.save_path.as_ref().map(PathBuf::from))
+                    .collect();
+                let parts = request["parts"]
+                    .as_array()
+                    .ok_or("Missing parts")?
+                    .iter()
+                    .map(|part| {
+                        part.as_str()
+                            .map(PathBuf::from)
+                            .ok_or("Expected a part path")
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                let result = crate::commands::split_downloads::join_split_parts(
+                    parts,
+                    child(&self.root, text(&request, "destination")?)?,
+                    serde_json::from_value(request["policy"].clone()).map_err(error)?,
+                    request["expectedBytes"].as_u64(),
+                    &completed,
+                    Some(AccountGuard::open(&self.root, Some(owner))?),
                 )
                 .await?;
                 serde_json::to_value(result).map_err(error)

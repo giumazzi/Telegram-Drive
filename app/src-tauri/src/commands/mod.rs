@@ -65,6 +65,7 @@ pub mod preview;
 pub mod settings;
 pub mod settings_sync;
 pub mod sharing;
+pub mod split_downloads;
 pub mod startup;
 pub mod storage_insights;
 pub mod streaming;
